@@ -21,6 +21,7 @@ interface PaymentMethod {
   available: number | string;
   icon?: string;
   Icon?: React.ElementType;
+  disabled?: boolean;
 }
 
 type PaymentStep = 'selection' | 'confirmation' | 'processing' | 'success';
@@ -144,7 +145,8 @@ export default function PaymentPage() {
       name: 'Tether USD (USDT)',
       currency: 'USDT',
       available: '0',
-      Icon: DollarSign
+      Icon: DollarSign,
+      disabled: true
     },
   ];
 
@@ -317,19 +319,25 @@ export default function PaymentPage() {
                 <div className="space-y-3">
                   {paymentMethods.map((method) => {
                     const IconComponent = method.Icon;
+                    const isDisabled = method.disabled;
                     return (
                       <button
                         key={method.id}
-                        onClick={() => setSelectedMethod(method.id)}
+                        onClick={() => !isDisabled && setSelectedMethod(method.id)}
+                        disabled={isDisabled}
                         className={`w-full p-4 rounded-xl border-2 transition-all ${
-                          selectedMethod === method.id
+                          isDisabled
+                            ? 'border-gray-200 bg-gray-100 cursor-not-allowed opacity-50'
+                            : selectedMethod === method.id
                             ? 'border-blue-500 bg-blue-50'
                             : 'border-gray-200 hover:border-gray-300'
                         }`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                              isDisabled ? 'bg-gray-200' : 'bg-blue-100'
+                            }`}>
                               {method.icon ? (
                                 <div className="w-5 h-5 flex items-center justify-center">
                                   <Image 
@@ -337,15 +345,23 @@ export default function PaymentPage() {
                                     alt={method.name} 
                                     width={18} 
                                     height={18} 
-                                    style={{ filter: 'brightness(0) saturate(100%) invert(37%) sepia(93%) saturate(1103%) hue-rotate(202deg) brightness(96%) contrast(88%)' }}
+                                    style={{ 
+                                      filter: isDisabled 
+                                        ? 'brightness(0) saturate(100%) invert(60%)' 
+                                        : 'brightness(0) saturate(100%) invert(37%) sepia(93%) saturate(1103%) hue-rotate(202deg) brightness(96%) contrast(88%)'
+                                    }}
                                   />
                                 </div>
                               ) : (
-                                IconComponent && <IconComponent className="w-5 h-5 text-blue-600" />
+                                IconComponent && <IconComponent className={`w-5 h-5 ${
+                                  isDisabled ? 'text-gray-400' : 'text-blue-600'
+                                }`} />
                               )}
                             </div>
                             <div className="text-left">
-                              <p className="font-semibold text-black">{method.name}</p>
+                              <p className={`font-semibold ${isDisabled ? 'text-gray-400' : 'text-black'}`}>
+                                {method.name}
+                              </p>
                               <p className="text-sm text-gray-500">
                                 {method.currency}
                               </p>
@@ -353,12 +369,12 @@ export default function PaymentPage() {
                           </div>
                           <div className="flex items-center space-x-2">
                             <div className="text-right">
-                              <p className="font-semibold text-black">
+                              <p className={`font-semibold ${isDisabled ? 'text-gray-400' : 'text-black'}`}>
                                 {method.available} {method.currency}
                               </p>
                               <p className="text-sm text-gray-500">Available</p>
                             </div>
-                            <ChevronRight className="w-5 h-5 text-gray-400" />
+                            <ChevronRight className={`w-5 h-5 ${isDisabled ? 'text-gray-300' : 'text-gray-400'}`} />
                           </div>
                         </div>
                       </button>
