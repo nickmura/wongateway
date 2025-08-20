@@ -1,0 +1,125 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Merchant {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  walletAddress String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  orders      Order[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  currency    String   @default("KRW")
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  merchantId  String
+  status      OrderStatus @default(PENDING)
+  totalAmount Float
+  currency    String      @default("KRW")
+  networkFee  Float       @default(0.02)
+  
+  // Customer information
+  customerEmail String?
+  customerWallet String?
+  
+  // Payment information
+  paymentMethod String?
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  paidAt      DateTime?
+  
+  // Relations
+  merchant    Merchant    @relation(fields: [merchantId], references: [id])
+  orderItems  OrderItem[]
+  payments    Payment[]
+  
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int    @default(1)
+  price     Float
+  
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+  
+  @@map("order_items")
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  orderId         String
+  status          PaymentStatus @default(PENDING)
+  amount          Float
+  currency        String
+  networkFee      Float
+  
+  // Blockchain transaction details
+  approveHash     String?
+  transferHash    String?
+  blockNumber     Int?
+  gasUsed         String?
+  
+  // Token details
+  tokenAddress    String?
+  fromAddress     String?
+  toAddress       String?
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  confirmedAt     DateTime?
+  
+  // Relations
+  order           Order @relation(fields: [orderId], references: [id])
+  
+  @@map("payments")
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  TRANSFERRED
+  CONFIRMED
+  FAILED
+}
