@@ -9,41 +9,21 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
-}
-
-model Merchant {
-  id          String   @id @default(cuid())
-  name        String
-  email       String   @unique
-  walletAddress String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  orders      Order[]
-}
-
-model Product {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  price       Float
-  currency    String   @default("KRW")
-  imageUrl    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  orderItems  OrderItem[]
 }
 
 model Order {
   id          String      @id @default(cuid())
-  merchantId  String
   status      OrderStatus @default(PENDING)
   totalAmount Float
   currency    String      @default("KRW")
   networkFee  Float       @default(0.02)
+  
+  // Simple product/merchant info (no relations)
+  merchantName    String
+  productName     String
+  productDescription String?
   
   // Customer information
   customerEmail String?
@@ -51,40 +31,6 @@ model Order {
   
   // Payment information
   paymentMethod String?
-  
-  // Timestamps
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  paidAt      DateTime?
-  
-  // Relations
-  merchant    Merchant    @relation(fields: [merchantId], references: [id])
-  orderItems  OrderItem[]
-  payments    Payment[]
-  
-  @@map("orders")
-}
-
-model OrderItem {
-  id        String @id @default(cuid())
-  orderId   String
-  productId String
-  quantity  Int    @default(1)
-  price     Float
-  
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   Product @relation(fields: [productId], references: [id])
-  
-  @@map("order_items")
-}
-
-model Payment {
-  id              String        @id @default(cuid())
-  orderId         String
-  status          PaymentStatus @default(PENDING)
-  amount          Float
-  currency        String
-  networkFee      Float
   
   // Blockchain transaction details
   approveHash     String?
@@ -98,14 +44,11 @@ model Payment {
   toAddress       String?
   
   // Timestamps
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  confirmedAt     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  paidAt      DateTime?
   
-  // Relations
-  order           Order @relation(fields: [orderId], references: [id])
-  
-  @@map("payments")
+  @@map("orders")
 }
 
 enum OrderStatus {
@@ -113,13 +56,4 @@ enum OrderStatus {
   PAID
   FAILED
   CANCELLED
-  REFUNDED
-}
-
-enum PaymentStatus {
-  PENDING
-  APPROVED
-  TRANSFERRED
-  CONFIRMED
-  FAILED
 }
