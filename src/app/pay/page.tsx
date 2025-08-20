@@ -18,15 +18,7 @@ async function fetchPaymentData(params: Awaited<PaymentPageProps['searchParams']
   // If orderId is provided, try to fetch from database
   if (params.orderId) {
     const order = await prisma.order.findUnique({
-      where: { id: params.orderId },
-      include: {
-        merchant: true,
-        orderItems: {
-          include: {
-            product: true
-          }
-        }
-      }
+      where: { id: params.orderId }
     });
 
     // If order exists, return it
@@ -34,10 +26,10 @@ async function fetchPaymentData(params: Awaited<PaymentPageProps['searchParams']
       return {
         amount: order.totalAmount,
         currency: order.currency,
-        merchant: order.merchant.name,
-        product: order.orderItems[0]?.product.name || 'Order',
+        merchant: order.merchantName,
+        product: order.productName,
         orderId: order.id,
-        description: order.orderItems[0]?.product.description || '',
+        description: order.productDescription || '',
       };
     }
   }
@@ -59,72 +51,25 @@ async function fetchPaymentData(params: Awaited<PaymentPageProps['searchParams']
     description: params.description || defaultData.description,
   };
 
-  // Create or find merchant
-  let merchant = await prisma.merchant.findFirst({
-    where: { name: orderData.merchant }
-  });
-
-  if (!merchant) {
-    merchant = await prisma.merchant.create({
-      data: {
-        name: orderData.merchant,
-        email: `contact@${orderData.merchant.toLowerCase().replace(/\s+/g, '')}.com`,
-        walletAddress: '0x742d35cc6634c0532925a3b844bc9e7595f0beb7'
-      }
-    });
-  }
-
-  // Create or find product
-  let product = await prisma.product.findFirst({
-    where: { 
-      name: orderData.product,
-      price: orderData.amount
-    }
-  });
-
-  if (!product) {
-    product = await prisma.product.create({
-      data: {
-        name: orderData.product,
-        description: orderData.description,
-        price: orderData.amount,
-        currency: orderData.currency
-      }
-    });
-  }
-
-  // Create new order
+  // Create new order with simplified schema
   const order = await prisma.order.create({
     data: {
-      merchantId: merchant.id,
+      merchantName: orderData.merchant,
+      productName: orderData.product,
+      productDescription: orderData.description,
       totalAmount: orderData.amount,
       currency: orderData.currency,
-      status: 'PENDING',
-      orderItems: {
-        create: {
-          productId: product.id,
-          quantity: 1,
-          price: orderData.amount
-        }
-      }
-    },
-    include: {
-      merchant: true,
-      orderItems: {
-        include: {
-          product: true
-        }
-      }
+      status: 'PENDING'
     }
   });
 
   return {
     amount: order.totalAmount,
     currency: order.currency,
-    merchant: order.merchant.name,
-    product: order.orderItems[0].product.name,
+    merchant: order.merchantName,
+    product: order.productName,
     orderId: order.id,
-    description: order.orderItems[0].product.description || '',
+    description: order.productDescription || '',
   };
 }
 
