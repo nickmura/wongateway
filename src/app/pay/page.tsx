@@ -23,10 +23,15 @@ async function fetchPaymentData(params: Awaited<PaymentPageProps['searchParams']
 
     // If order exists, return it
     if (order) {
+      // Add (Shopify) suffix if it's a Shopify order
+      const merchantDisplay = order.type === 'SHOPIFY' 
+        ? `${order.merchantName} (Shopify)`
+        : order.merchantName;
+      
       return {
         amount: order.totalAmount,
         currency: order.currency,
-        merchant: order.merchantName,
+        merchant: merchantDisplay,
         product: order.productName,
         orderId: order.id,
         description: order.orderConfirmation || '',

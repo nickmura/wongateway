@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       order_status_url: data.order_status_url,
       financial_status: data.financial_status,
       fulfillment_status: data.fulfillment_status,
-      vendor: vendor,
+      vendor: `KaiaShop`,
       product_name: firstProduct.title || 'Unknown Product',
       product_price: firstProduct.price || '0'
     };
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
         status: data.financial_status === 'paid' ? 'PAID' : 'PENDING',
         totalAmount: parseFloat(extractedData.total_price),
         currency: extractedData.currency_code,
-        merchantName: vendor,
+        merchantName: `KaiaShop`,
         productName: extractedData.product_name,
         orderConfirmation: `${extractedData.confirmation_number}`,
         customerEmail: extractedData.contact_email,

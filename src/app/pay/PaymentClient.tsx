@@ -167,6 +167,11 @@ export default function PaymentClient({ paymentData }: PaymentClientProps) {
 
   const selectedPaymentMethod = paymentMethods.find(m => m.id === selectedMethod);
   const total = paymentData.amount + networkFee;
+  
+  // Check if user has sufficient balance
+  const hasInsufficientBalance = krwBalance ? 
+    Number(formatUnits(krwBalance.value, krwBalance.decimals)) < total : 
+    false;
 
   // Handle initial payment button click
   const handlePaymentClick = () => {
@@ -518,6 +523,17 @@ export default function PaymentClient({ paymentData }: PaymentClientProps) {
                       <span className="font-semibold text-black">Total</span>
                       <span className="font-semibold text-black">{total.toFixed(2)} {paymentData.currency}</span>
                     </div>
+                    {hasInsufficientBalance && (
+                      <div className="mt-3 p-3 bg-red-100 rounded-lg">
+                        <p className="text-red-700 text-sm font-medium">
+                          ⚠️ Insufficient balance
+                        </p>
+                        <p className="text-red-600 text-xs mt-1">
+                          Required: {total.toFixed(2)} {paymentData.currency} | 
+                          Available: {krwAvailableFormatted} {paymentData.currency}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -554,10 +570,17 @@ export default function PaymentClient({ paymentData }: PaymentClientProps) {
                   </button>
                   <button
                     onClick={handleConfirmPayment}
-                    className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-semibold transition-colors text-white"
+                    disabled={hasInsufficientBalance}
+                    className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-colors text-white ${
+                      hasInsufficientBalance 
+                        ? 'bg-gray-400 cursor-not-allowed' 
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
                     style={{ color: 'white !important' }}
                   >
-                    <span style={{ color: 'white !important' }}>Pay Now</span>
+                    <span style={{ color: 'white !important' }}>
+                      {hasInsufficientBalance ? 'Insufficient Balance' : 'Pay Now'}
+                    </span>
                   </button>
                 </div>
               </div>
