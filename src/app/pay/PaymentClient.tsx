@@ -50,6 +50,9 @@ export default function PaymentClient({ paymentData }: PaymentClientProps) {
   const [txStatus, setTxStatus] = useState<TransactionStatus>('idle');
   const [tokenAmount, setTokenAmount] = useState<bigint>(BigInt(0));
   
+  // Debug log
+  console.log('PaymentData received:', paymentData);
+  
   // Wagmi hooks
   const { address, isConnected, chain } = useAccount();
   const { data: balance } = useBalance({ address });
@@ -454,6 +457,12 @@ export default function PaymentClient({ paymentData }: PaymentClientProps) {
                       <span className="text-gray-600">Order ID</span>
                       <span className="font-medium text-black">{paymentData.orderId}</span>
                     </div>
+                    {paymentData.description && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Confirmation</span>
+                        <span className="font-medium text-black">{paymentData.description}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-gray-600">Merchant</span>
                       <span className="font-medium text-black">{paymentData.merchant}</span>

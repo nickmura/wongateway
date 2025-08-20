@@ -24,7 +24,7 @@ model Order {
   // Simple product/merchant info (no relations)
   merchantName    String
   productName     String
-  productDescription String?
+  orderConfirmation String?
   
   // Customer information
   customerEmail String?

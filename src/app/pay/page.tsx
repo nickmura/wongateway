@@ -29,7 +29,7 @@ async function fetchPaymentData(params: Awaited<PaymentPageProps['searchParams']
         merchant: order.merchantName,
         product: order.productName,
         orderId: order.id,
-        description: order.productDescription || '',
+        description: order.orderConfirmation || '',
       };
     }
   }
@@ -56,7 +56,7 @@ async function fetchPaymentData(params: Awaited<PaymentPageProps['searchParams']
     data: {
       merchantName: orderData.merchant,
       productName: orderData.product,
-      productDescription: orderData.description,
+      orderConfirmation: orderData.description,
       totalAmount: orderData.amount,
       currency: orderData.currency,
       status: 'PENDING'
@@ -69,7 +69,7 @@ async function fetchPaymentData(params: Awaited<PaymentPageProps['searchParams']
     merchant: order.merchantName,
     product: order.productName,
     orderId: order.id,
-    description: order.productDescription || '',
+    description: order.orderConfirmation || '',
   };
 }
 

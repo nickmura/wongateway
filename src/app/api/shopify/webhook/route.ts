@@ -18,7 +18,6 @@ export async function POST(request: NextRequest) {
 
     // Extract vendor from first line item (they should all be the same vendor)
     const vendor = data.line_items?.[0]?.vendor || 'Unknown Vendor';
-    
     // Extract product info from first line item
     const firstProduct = data.line_items?.[0] || {};
     
@@ -39,17 +38,31 @@ export async function POST(request: NextRequest) {
 
     console.log('Shopify webhook - extracted data:', extractedData);
 
+    // Check if order already exists
+    const existingOrder = await prisma.order.findUnique({
+      where: { id: String(data.id) }
+    });
+
+    if (existingOrder) {
+      console.log('Order already exists:', existingOrder.id);
+      return NextResponse.json({ 
+        message: 'Order already exists',
+        orderId: existingOrder.id,
+        orderConfirmation: existingOrder.orderConfirmation
+      }, { status: 200 });
+    }
+
     // Insert into database
     const order = await prisma.order.create({
       data: {
-        id: `shopify_${data.id}`, // Prefix to avoid ID conflicts
+        id: String(data.id), // Convert to string without prefix
         type: 'SHOPIFY',
         status: data.financial_status === 'paid' ? 'PAID' : 'PENDING',
         totalAmount: parseFloat(extractedData.total_price),
         currency: extractedData.currency_code,
         merchantName: vendor,
         productName: extractedData.product_name,
-        productDescription: `Order ${extractedData.confirmation_number}`,
+        orderConfirmation: `${extractedData.confirmation_number}`,
         customerEmail: extractedData.contact_email,
         customerWallet: null,
         paymentMethod: 'shopify'
@@ -66,7 +79,10 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Webhook processing error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
 
