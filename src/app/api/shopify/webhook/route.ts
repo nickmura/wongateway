@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-// import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 // import crypto from 'crypto';
 
 // Shopify webhook verification
@@ -16,9 +16,53 @@ export async function POST(request: NextRequest) {
     const body = await request.text();
     const data = JSON.parse(body);
 
-    console.log('Shopify webhook received:', data);
+    // Extract vendor from first line item (they should all be the same vendor)
+    const vendor = data.line_items?.[0]?.vendor || 'Unknown Vendor';
+    
+    // Extract product info from first line item
+    const firstProduct = data.line_items?.[0] || {};
+    
+    // Extract required fields
+    const extractedData = {
+      id: data.id,
+      confirmation_number: data.confirmation_number,
+      contact_email: data.contact_email || data.email,
+      total_price: data.current_total_price,
+      currency_code: data.currency,
+      order_status_url: data.order_status_url,
+      financial_status: data.financial_status,
+      fulfillment_status: data.fulfillment_status,
+      vendor: vendor,
+      product_name: firstProduct.title || 'Unknown Product',
+      product_price: firstProduct.price || '0'
+    };
 
-    return NextResponse.json({ message: 'Webhook received' }, { status: 200 });
+    console.log('Shopify webhook - extracted data:', extractedData);
+
+    // Insert into database
+    const order = await prisma.order.create({
+      data: {
+        id: `shopify_${data.id}`, // Prefix to avoid ID conflicts
+        type: 'SHOPIFY',
+        status: data.financial_status === 'paid' ? 'PAID' : 'PENDING',
+        totalAmount: parseFloat(extractedData.total_price),
+        currency: extractedData.currency_code,
+        merchantName: vendor,
+        productName: extractedData.product_name,
+        productDescription: `Order ${extractedData.confirmation_number}`,
+        customerEmail: extractedData.contact_email,
+        customerWallet: null,
+        paymentMethod: 'shopify'
+      }
+    });
+
+    console.log('Order created in database:', order.id);
+
+    return NextResponse.json({ 
+      message: 'Webhook received and order created',
+      extracted: extractedData,
+      orderId: order.id
+    }, { status: 200 });
 
   } catch (error) {
     console.error('Webhook processing error:', error);

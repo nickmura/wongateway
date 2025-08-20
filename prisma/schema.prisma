@@ -15,6 +15,7 @@ datasource db {
 
 model Order {
   id          String      @id @default(cuid())
+  type        OrderType   @default(DIRECT)
   status      OrderStatus @default(PENDING)
   totalAmount Float
   currency    String      @default("KRW")
@@ -56,4 +57,10 @@ enum OrderStatus {
   PAID
   FAILED
   CANCELLED
+}
+
+enum OrderType {
+  DIRECT
+  SHOPIFY
+  WOOCOMMERCE
 }
