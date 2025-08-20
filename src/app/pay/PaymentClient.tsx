@@ -269,11 +269,30 @@ export default function PaymentClient({ paymentData }: PaymentClientProps) {
 
   // Handle transfer confirmation
   useEffect(() => {
-    if (isTransferConfirmed) {
+    if (isTransferConfirmed && transferHash) {
       setTxStatus('completed');
-      setPaymentStep('success');
+      
+      // Update order status to PAID
+      fetch('/api/orders/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: paymentData.orderId,
+          status: 'PAID',
+          transferHash: transferHash
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        console.log('Order status updated:', data);
+        setPaymentStep('success');
+      })
+      .catch(error => {
+        console.error('Failed to update order status:', error);
+        setPaymentStep('success'); // Still show success to user
+      });
     }
-  }, [isTransferConfirmed]);
+  }, [isTransferConfirmed, transferHash, paymentData.orderId]);
 
   // Log errors
   useEffect(() => {
