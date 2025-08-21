@@ -34,13 +34,14 @@ interface PaymentData {
   status?: string;
   transferHash?: string | null;
   customerWallet?: string | null;
+  merchantWallet?: string | null;
 }
 
 type PaymentStep = 'selection' | 'confirmation' | 'processing' | 'success';
 type TransactionStatus = 'idle' | 'approving' | 'approved' | 'transferring' | 'completed' | 'error';
 
 const KRW_TOKEN_ADDRESS = '0x865d6a906c2f5506729c7d0bc0f6Dc6a3Cbf433c' as `0x${string}`;
-const MERCHANT_ADDRESS = '0x742d35cc6634c0532925a3b844bc9e7595f0beb7' as `0x${string}`;
+const DEFAULT_MERCHANT_ADDRESS = '0x742d35cc6634c0532925a3b844bc9e7595f0beb7' as `0x${string}`;
 
 interface PaymentClientProps {
   paymentData: PaymentData;
@@ -233,6 +234,11 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
   console.log('PaymentData received:', paymentData);
   console.log('Order already paid:', isOrderPaid);
   
+  // Use merchant wallet if available, otherwise use default
+  const merchantAddress = paymentData.merchantWallet 
+    ? paymentData.merchantWallet as `0x${string}`
+    : DEFAULT_MERCHANT_ADDRESS;
+  
   // Wagmi hooks
   const { address, isConnected, chain } = useAccount();
   const { data: balance } = useBalance({ address });
@@ -249,7 +255,7 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
     address: KRW_TOKEN_ADDRESS,
     abi: erc20Abi,
     functionName: 'allowance',
-    args: address ? [address, MERCHANT_ADDRESS] : undefined,
+    args: address ? [address, merchantAddress] : undefined,
     chainId: chain?.id,
   });
 
@@ -274,7 +280,7 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
     address: KRW_TOKEN_ADDRESS,
     abi: erc20Abi,
     functionName: 'approve',
-    args: [MERCHANT_ADDRESS, tokenAmount],
+    args: [merchantAddress, tokenAmount],
     chainId: chain?.id,
     query: {
       enabled: Boolean(address && tokenAmount > BigInt(0) && (!currentAllowance || currentAllowance < tokenAmount)),
@@ -286,7 +292,7 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
     address: KRW_TOKEN_ADDRESS,
     abi: erc20Abi,
     functionName: 'transfer',
-    args: [MERCHANT_ADDRESS, tokenAmount],
+    args: [merchantAddress, tokenAmount],
     chainId: chain?.id,
     query: {
       enabled: Boolean(address && tokenAmount > BigInt(0) && currentAllowance && currentAllowance >= tokenAmount),
@@ -395,7 +401,7 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
             address: KRW_TOKEN_ADDRESS,
             abi: erc20Abi,
             functionName: 'approve',
-            args: [MERCHANT_ADDRESS, tokenAmount],
+            args: [merchantAddress, tokenAmount],
             chainId: chain?.id,
           });
         }
@@ -412,7 +418,7 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
             address: KRW_TOKEN_ADDRESS,
             abi: erc20Abi,
             functionName: 'transfer',
-            args: [MERCHANT_ADDRESS, tokenAmount],
+            args: [merchantAddress, tokenAmount],
             chainId: chain?.id,
           });
         }
@@ -439,7 +445,7 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
             address: KRW_TOKEN_ADDRESS,
             abi: erc20Abi,
             functionName: 'transfer',
-            args: [MERCHANT_ADDRESS, tokenAmount],
+            args: [merchantAddress, tokenAmount],
             chainId: chain?.id,
           });
         }

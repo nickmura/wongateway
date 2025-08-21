@@ -2,21 +2,22 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowRight, ShoppingCart, Zap, Shield, Code, Globe, DollarSign, CheckCircle, Languages } from "lucide-react";
+import { ArrowRight, ShoppingCart, Zap, Shield, Code, Globe, DollarSign, CheckCircle, Languages, Store } from "lucide-react";
 
 export default function Home() {
   const [language, setLanguage] = useState<'en' | 'ko'>('en');
 
   const content = {
     en: {
-      nav: { demo: 'Demo', github: 'GitHub' },
+      nav: { demo: 'Demo', dashboard: 'Dashboard', github: 'GitHub' },
       hero: {
         badge: 'Proof of Concept',
         title1: 'Accept KRW Stablecoin',
         title2: 'in Your Shopify Store',
         description: 'A research project exploring seamless cryptocurrency payments for e-commerce using Kaia blockchain\'s KRW stablecoin.',
-        tryDemo: 'Try Demo Payment',
-        viewSource: 'View Source Code'
+        tryDemo: 'Try Demo',
+        viewSource: 'View Source Code',
+        visitStore: 'Visit Shopify Store'
       },
       features: {
         title: 'Research Focus Areas',
@@ -69,14 +70,15 @@ export default function Home() {
       }
     },
     ko: {
-      nav: { demo: '데모', github: '깃허브' },
+      nav: { demo: '데모', dashboard: '대시보드', github: '깃허브' },
       hero: {
         badge: '개념 증명',
         title1: 'KRW 스테이블코인',
         title2: 'Shopify 결제 지원',
         description: 'Kaia 블록체인의 KRW 스테이블코인을 활용한 전자상거래 암호화폐 결제 연구 프로젝트',
-        tryDemo: '데모 결제 체험',
-        viewSource: '소스 코드 보기'
+        tryDemo: '데모 체험',
+        viewSource: '소스 코드 보기',
+        visitStore: 'Shopify 스토어 방문'
       },
       features: {
         title: '연구 중점 분야',
@@ -148,6 +150,9 @@ export default function Home() {
             <Link href="/pay" className="text-gray-600 hover:text-gray-900 transition-colors">
               {t.nav.demo}
             </Link>
+            <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors">
+              {t.nav.dashboard}
+            </Link>
             <a href="https://github.com/nickmura/kaia-commerce" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900 transition-colors">
               {t.nav.github}
             </a>
@@ -186,6 +191,16 @@ export default function Home() {
               <span>{t.hero.tryDemo}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
+            <a 
+              href="https://kaia-commerce.myshopify.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-2 bg-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors"
+            >
+              <Store className="w-5 h-5" />
+              <span>{t.hero.visitStore}</span>
+              <ArrowRight className="w-4 h-4" />
+            </a>
             <a 
               href="https://github.com/nickmura/kaia-commerce"
               target="_blank"

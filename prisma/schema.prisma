@@ -7,6 +7,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Merchant {
+  id            String   @id @default(cuid())
+  walletAddress String   @unique
+  name          String   @default("Unnamed Merchant")
+  email         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@map("merchants")
+}
+
 model Order {
   id                String      @id @default(cuid())
   status            OrderStatus @default(PENDING)
@@ -32,6 +43,7 @@ model Order {
   orderConfirmation String?
   adminGraphqlApiId String?
   shopDomain        String?
+  merchantWallet    String?     // Add merchant wallet for direct invoices
 
   @@map("orders")
 }
