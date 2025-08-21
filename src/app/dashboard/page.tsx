@@ -69,7 +69,7 @@ export default function MerchantDashboard() {
       setIntegrationHealth(null);
       setLoading(false);
     }
-  }, [isConnected, address]);
+  }, [isConnected, address, fetchMerchantData]);
 
   const fetchMerchantData = useCallback(async () => {
     if (!address) return;

@@ -6,12 +6,12 @@ export async function GET() {
     const healthStatus = {
       shopify: {
         connected: false,
-        status: 'disconnected' as const,
+        status: 'disconnected' as 'connected' | 'disconnected' | 'error' | 'not_configured' | 'configured',
         details: null as Record<string, unknown> | null
       },
       woocommerce: {
         connected: false,
-        status: 'disconnected' as const,
+        status: 'disconnected' as 'connected' | 'disconnected' | 'error' | 'not_configured' | 'configured',
         details: null as Record<string, unknown> | null
       }
     };
@@ -55,7 +55,7 @@ export async function GET() {
       } catch (error) {
         healthStatus.shopify = {
           connected: false,
-          status: 'error',
+          status: 'error' as const,
           details: {
             error: error instanceof Error ? error.message : 'Connection failed',
             domain: shopifyDomain
@@ -65,7 +65,7 @@ export async function GET() {
     } else {
       healthStatus.shopify = {
         connected: false,
-        status: 'not_configured',
+        status: 'not_configured' as const,
         details: {
           missingEnvVars: [
             ...(shopifyAccessToken ? [] : ['SHOPIFY_API_ACCESS_TOKEN']),
@@ -84,7 +84,7 @@ export async function GET() {
       // For now, just check if env vars are present
       healthStatus.woocommerce = {
         connected: true,
-        status: 'configured',
+        status: 'configured' as const,
         details: {
           url: woocommerceUrl,
           note: 'WooCommerce integration pending implementation'
@@ -93,7 +93,7 @@ export async function GET() {
     } else {
       healthStatus.woocommerce = {
         connected: false,
-        status: 'not_configured',
+        status: 'not_configured' as const,
         details: {
           missingEnvVars: [
             ...(woocommerceUrl ? [] : ['WOOCOMMERCE_URL']),
