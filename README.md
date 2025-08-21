@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kaia Commerce
 
-## Getting Started
+A Web3 payment gateway for Kaia blockchain enabling KRW stablecoin payments on Shopify and direct invoices.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Shopify Integration**: Real-time payment processing via webhooks
+- **Direct Invoices**: Merchant dashboard for custom payment links  
+- **Multi-token Support**: KAIA native token and KRW stablecoin
+- **Wallet Authentication**: No passwords, Web3 wallet-based auth
+
+## Quick Start
+
+**Shopify/e-commerce integration instructions to be added**
+
+
+1. **Clone & Install**
+   ```bash
+   git clone https://github.com/nickmura/kaia-commerce.git
+   cd kaia-commerce && npm install
+   ```
+
+2. **Setup Database**
+   ```bash
+   # Configure .env with DATABASE_URL
+   npx prisma migrate dev && npx prisma generate
+   ```
+
+3. **Run Development**
+   ```bash
+   npm run dev
+   ```
+
+## Environment Variables
+
+```env
+DATABASE_URL="postgresql://user:pass@localhost:5432/kaia-commerce"
+SHOPIFY_API_ACCESS_TOKEN="shpat_xxx" # Optional
+SHOPIFY_SHOP_DOMAIN="store.myshopify.com" # Optional
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Usage
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Merchants**: Connect wallet → `/dashboard` → Create invoices → Share payment links
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Customers**: Receive link → Connect wallet → Select token → Complete payment
 
-## Learn More
+## Tech Stack
 
-To learn more about Next.js, take a look at the following resources:
+- Next.js 15 + TypeScript + Tailwind CSS
+- Prisma ORM + PostgreSQL  
+- Wagmi + RainbowKit + Viem (Web3)
+- Kaia Network integration
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## API Endpoints
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `POST /api/merchants/auth` - Wallet authentication
+- `GET /api/merchants/invoices` - Fetch invoices
+- `POST /api/merchants/invoices` - Create invoice
+- `GET /pay?orderId=xxx` - Payment page
 
-## Deploy on Vercel
+## Development
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run build    # Build for production
+npm run test     # Run tests
+npx prisma studio # Database GUI
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+**Live Demo**: [kaia-commerce.myshopify.com](https://kaia-commerce.myshopify.com)
+
+**Built for the Kaia ecosystem**
