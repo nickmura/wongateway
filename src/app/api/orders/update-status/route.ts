@@ -96,7 +96,7 @@ async function markShopifyOrderAsPaid(adminGraphqlApiId: string, shopDomain?: st
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { orderId, status, transferHash } = body;
+    const { orderId, status, transferHash, customerWallet } = body;
 
     if (!orderId || !status) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -107,6 +107,7 @@ export async function POST(request: NextRequest) {
       data: {
         status: status,
         transferHash: transferHash || null,
+        customerWallet: customerWallet || null,
         paidAt: status === 'PAID' ? new Date() : undefined,
       }
     });

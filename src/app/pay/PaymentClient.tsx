@@ -31,6 +31,9 @@ interface PaymentData {
   product: string;
   orderId: string | null;
   description?: string;
+  status?: string;
+  transferHash?: string | null;
+  customerWallet?: string | null;
 }
 
 type PaymentStep = 'selection' | 'confirmation' | 'processing' | 'success';
@@ -213,12 +216,22 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
   };
 
   const t = content[language];
-  const [paymentStep, setPaymentStep] = useState<PaymentStep>('selection');
+  
+  // Check if order is already paid
+  const isOrderPaid = paymentData.status === 'PAID' && paymentData.transferHash;
+  
+  const [paymentStep, setPaymentStep] = useState<PaymentStep>(
+    isOrderPaid ? 'success' : 'selection'
+  );
   const [txStatus, setTxStatus] = useState<TransactionStatus>('idle');
   const [tokenAmount, setTokenAmount] = useState<bigint>(BigInt(0));
+  const [transferHash, setTransferHash] = useState<string | undefined>(
+    paymentData.transferHash || undefined
+  );
   
   // Debug log
   console.log('PaymentData received:', paymentData);
+  console.log('Order already paid:', isOrderPaid);
   
   // Wagmi hooks
   const { address, isConnected, chain } = useAccount();
@@ -290,7 +303,7 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
   } = useWriteContract();
 
   const { 
-    data: transferHash,
+    data: transferTxHash,
     writeContract: writeTransfer,
     isPending: isTransferring,
     isError: isTransferError,
@@ -306,7 +319,7 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
     
   const { isLoading: isTransferConfirming, isSuccess: isTransferConfirmed } = 
     useWaitForTransactionReceipt({ 
-      hash: transferHash,
+      hash: transferTxHash,
       chainId: chain?.id,
     });
 
@@ -436,8 +449,9 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
 
   // Handle transfer confirmation
   useEffect(() => {
-    if (isTransferConfirmed && transferHash) {
+    if (isTransferConfirmed && transferTxHash) {
       setTxStatus('completed');
+      setTransferHash(transferTxHash); // Set the transferHash state
       
       // Update order status to PAID only if we have an orderId
       if (paymentData.orderId) {
@@ -447,7 +461,8 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
           body: JSON.stringify({
             orderId: paymentData.orderId,
             status: 'PAID',
-            transferHash: transferHash
+            transferHash: transferTxHash,
+            customerWallet: address // Save customer wallet address
           })
         })
         .then(res => res.json())
@@ -464,7 +479,7 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
         setPaymentStep('success');
       }
     }
-  }, [isTransferConfirmed, transferHash, paymentData.orderId]);
+  }, [isTransferConfirmed, transferTxHash, paymentData.orderId, address]);
 
   // Log errors
   useEffect(() => {

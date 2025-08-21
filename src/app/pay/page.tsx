@@ -36,6 +36,9 @@ async function fetchPaymentData(params: Awaited<PaymentPageProps['searchParams']
         product: order.productName,
         orderId: order.id,
         description: order.orderConfirmation || '',
+        status: order.status,
+        transferHash: order.transferHash,
+        customerWallet: order.customerWallet,
       };
     }
   }
