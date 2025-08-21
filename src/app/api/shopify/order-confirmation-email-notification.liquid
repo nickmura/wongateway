@@ -168,7 +168,8 @@
           Please follow this link to complete your payment: <a href="https://kaia-commerce.vercel.app/pay?orderId={{ order.id }}">Payment Link</a>
         </p>
         <p>
-          Instructions: Please input your order number when prompted.
+         {% comment %} TODO: make this more elaborate {% endcomment %}
+          Instructions: Please connect your wallet and transfer the amount.
         </p>
       {% endif %}
       {% comment %} END: Custom KRW payment instructions {% endcomment %}
