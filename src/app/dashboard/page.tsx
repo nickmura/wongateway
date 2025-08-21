@@ -441,32 +441,32 @@ export default function MerchantDashboard() {
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-3">
                           <ShoppingBag className={`w-6 h-6 ${
-                            integrationHealth.shopify.connected ? 'text-green-600' : 'text-gray-400'
+                            integrationHealth?.shopify?.connected ? 'text-green-600' : 'text-gray-400'
                           }`} />
                           <div>
                             <h3 className="font-semibold text-gray-900">Shopify Integration</h3>
                             <p className={`text-sm ${
-                              integrationHealth.shopify.connected ? 'text-green-600' : 'text-gray-500'
+                              integrationHealth?.shopify?.connected ? 'text-green-600' : 'text-gray-500'
                             }`}>
-                              {integrationHealth.shopify.connected ? 'Connected' : 
-                               integrationHealth.shopify.status === 'not_configured' ? 'Not Configured' : 'Disconnected'}
+                              {integrationHealth?.shopify?.connected ? 'Connected' : 
+                               integrationHealth?.shopify?.status === 'not_configured' ? 'Not Configured' : 'Disconnected'}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center">
-                          {integrationHealth.shopify.connected ? (
+                          {integrationHealth?.shopify?.connected ? (
                             <CheckCircle className="w-5 h-5 text-green-600" />
                           ) : (
                             <AlertCircle className="w-5 h-5 text-orange-500" />
                           )}
                         </div>
                       </div>
-                      {integrationHealth.shopify.connected && integrationHealth.shopify.details?.shopName && (
+                      {integrationHealth?.shopify?.connected && integrationHealth?.shopify?.details?.shopName && (
                         <div className="mt-2 text-xs text-gray-600">
-                          Store: {integrationHealth.shopify.details.shopName}
+                          Store: {integrationHealth?.shopify?.details?.shopName}
                         </div>
                       )}
-                      {!integrationHealth.shopify.connected && (
+                      {!integrationHealth?.shopify?.connected && (
                         <div className="mt-2 text-xs text-gray-500">
                           <p>To connect your Shopify store, please follow the example repository</p>
                           <a 
@@ -488,27 +488,27 @@ export default function MerchantDashboard() {
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-3">
                           <Store className={`w-6 h-6 ${
-                            integrationHealth.woocommerce.connected ? 'text-purple-600' : 'text-gray-400'
+                            integrationHealth?.woocommerce?.connected ? 'text-purple-600' : 'text-gray-400'
                           }`} />
                           <div>
                             <h3 className="font-semibold text-gray-900">WooCommerce Integration</h3>
                             <p className={`text-sm ${
-                              integrationHealth.woocommerce.connected ? 'text-purple-600' : 'text-gray-500'
+                              integrationHealth?.woocommerce?.connected ? 'text-purple-600' : 'text-gray-500'
                             }`}>
-                              {integrationHealth.woocommerce.connected ? 'Configured' : 
-                               integrationHealth.woocommerce.status === 'not_configured' ? 'Not Configured' : 'Disconnected'}
+                              {integrationHealth?.woocommerce?.connected ? 'Configured' : 
+                               integrationHealth?.woocommerce?.status === 'not_configured' ? 'Not Configured' : 'Disconnected'}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center">
-                          {integrationHealth.woocommerce.connected ? (
+                          {integrationHealth?.woocommerce?.connected ? (
                             <CheckCircle className="w-5 h-5 text-purple-600" />
                           ) : (
                             <AlertCircle className="w-5 h-5 text-orange-500" />
                           )}
                         </div>
                       </div>
-                      {!integrationHealth.woocommerce.connected && (
+                      {!integrationHealth?.woocommerce?.connected && (
                         <div className="mt-2 text-xs text-gray-500">
                           <p>To connect your WooCommerce store, please follow the example repository</p>
                           <a 
