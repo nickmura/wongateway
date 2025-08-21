@@ -1,6 +1,5 @@
 import PaymentClient from './PaymentClient';
 import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
 
 interface PaymentPageProps {
   searchParams: Promise<{

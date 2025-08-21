@@ -12,7 +12,7 @@ import {
   useWaitForTransactionReceipt,
   useReadContract 
 } from 'wagmi';
-import { parseUnits, formatUnits, erc20Abi, maxUint256 } from 'viem';
+import { parseUnits, formatUnits, erc20Abi } from 'viem';
 
 interface PaymentMethod {
   id: string;
@@ -451,7 +451,7 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
         }
       });
     }
-  }, [isApproveConfirmed, txStatus, transferConfig, writeTransfer, tokenAmount, chain, refetchAllowance]);
+  }, [isApproveConfirmed, txStatus, transferConfig, writeTransfer, tokenAmount, chain, refetchAllowance, merchantAddress]);
 
   // Handle transfer confirmation
   useEffect(() => {

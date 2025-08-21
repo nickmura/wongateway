@@ -41,8 +41,7 @@ export async function POST(request: NextRequest) {
       currency = 'KRW',
       customerEmail,
       description,
-      merchantWallet,
-      type = 'DIRECT'
+      merchantWallet
     } = body;
 
     if (!productName || !totalAmount || !merchantWallet) {

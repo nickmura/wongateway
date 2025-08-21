@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { Plus, Copy, ExternalLink, Package, DollarSign, Clock, CheckCircle, Wallet, FileText, ShoppingBag, Store, BookOpen, Filter, AlertCircle, Info, Home } from 'lucide-react';
+import { Plus, Copy, ExternalLink, Package, Clock, CheckCircle, Wallet, FileText, ShoppingBag, Store, BookOpen, Filter, AlertCircle, Home } from 'lucide-react';
 import Link from 'next/link';
 
 interface Invoice {
@@ -28,7 +28,7 @@ interface Merchant {
 interface IntegrationHealth {
   connected: boolean;
   status: 'connected' | 'disconnected' | 'error' | 'not_configured' | 'configured';
-  details: any;
+  details: Record<string, unknown> | null;
 }
 
 export default function MerchantDashboard() {
@@ -56,7 +56,7 @@ export default function MerchantDashboard() {
     type: 'DIRECT'
   });
   
-  const [createdInvoice, setCreatedInvoice] = useState<any>(null);
+  const [createdInvoice, setCreatedInvoice] = useState<Invoice | null>(null);
 
   // Fetch or create merchant account
   useEffect(() => {
@@ -71,7 +71,7 @@ export default function MerchantDashboard() {
     }
   }, [isConnected, address]);
 
-  const fetchMerchantData = async () => {
+  const fetchMerchantData = useCallback(async () => {
     if (!address) return;
     
     setLoading(true);
@@ -99,7 +99,7 @@ export default function MerchantDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [address]);
 
   const fetchIntegrationHealth = async () => {
     try {

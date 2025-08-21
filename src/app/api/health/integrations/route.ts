@@ -1,18 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 // Health check for platform integrations
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const healthStatus = {
       shopify: {
         connected: false,
-        status: 'disconnected',
-        details: null as any
+        status: 'disconnected' as const,
+        details: null as Record<string, unknown> | null
       },
       woocommerce: {
         connected: false,
-        status: 'disconnected',
-        details: null as any
+        status: 'disconnected' as const,
+        details: null as Record<string, unknown> | null
       }
     };
 
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
           const shopData = await shopifyResponse.json();
           healthStatus.shopify = {
             connected: true,
-            status: 'connected',
+            status: 'connected' as const,
             details: {
               domain: shopifyDomain,
               shopName: shopData.shop?.name || 'Unknown',
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
         } else {
           healthStatus.shopify = {
             connected: false,
-            status: 'error',
+            status: 'error' as const,
             details: {
               error: `API Error: ${shopifyResponse.status}`,
               domain: shopifyDomain
