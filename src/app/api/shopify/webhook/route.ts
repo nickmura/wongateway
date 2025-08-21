@@ -19,11 +19,24 @@ export async function POST(request: NextRequest) {
     // Extract shop domain from headers (Shopify sends this in X-Shopify-Shop-Domain header)
     const shopDomain = request.headers.get('x-shopify-shop-domain') || process.env.SHOPIFY_SHOP_DOMAIN;
 
-    // Extract vendor from first line item (they should all be the same vendor)
-    const vendor = data.line_items?.[0]?.vendor || 'Unknown Vendor';
+    // Get the single merchant from database (there should only be one)
+    const merchant = await prisma.merchant.findFirst();
     
-    // Extract product info from first line item
-    const firstProduct = data.line_items?.[0] || {};
+    if (!merchant) {
+      console.error('No merchant found in database');
+      return NextResponse.json({ 
+        error: 'No merchant configured' 
+      }, { status: 500 });
+    }
+
+    // Extract vendor from first line item (they should all be the same vendor)
+    const vendor = data.line_items?.[0]?.vendor || merchant.name || 'Unknown Vendor';
+    
+    // Extract all product names from line items
+    const productNames = data.line_items?.map((item: any) => item.title).filter(Boolean) || [];
+    const productName = productNames.length > 1 
+      ? productNames.join(', ') 
+      : productNames[0] || 'Unknown Product';
     
     // Extract required fields
     const extractedData = {
@@ -37,9 +50,10 @@ export async function POST(request: NextRequest) {
       financial_status: data.financial_status,
       fulfillment_status: data.fulfillment_status,
       vendor: vendor,
-      product_name: firstProduct.title || 'Unknown Product',
-      product_price: firstProduct.price || '0',
-      shop_domain: shopDomain
+      product_name: productName,
+      product_count: data.line_items?.length || 0,
+      shop_domain: shopDomain,
+      merchant_wallet: merchant.walletAddress
     };
 
     console.log('Shopify webhook - extracted data:', extractedData);
@@ -67,12 +81,14 @@ export async function POST(request: NextRequest) {
         totalAmount: parseFloat(extractedData.total_price),
         currency: extractedData.currency_code,
         merchantName: extractedData.vendor,
+        merchantWallet: merchant.walletAddress, // Add merchant wallet
         productName: extractedData.product_name,
         orderConfirmation: `${extractedData.confirmation_number}`,
         customerEmail: extractedData.contact_email,
         customerWallet: null,
         paymentMethod: 'shopify',
-        adminGraphqlApiId: extractedData.admin_graphql_api_id
+        adminGraphqlApiId: extractedData.admin_graphql_api_id,
+        shopDomain: extractedData.shop_domain
       }
     });
 
