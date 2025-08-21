@@ -14,11 +14,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Wallet address required' }, { status: 400 });
     }
 
-    // Fetch all orders created by this merchant
+    // Fetch all orders for this merchant (all types)
     const invoices = await prisma.order.findMany({
       where: {
-        merchantWallet: walletAddress.toLowerCase(),
-        type: 'DIRECT'
+        merchantWallet: walletAddress.toLowerCase()
       },
       orderBy: {
         createdAt: 'desc'
@@ -42,7 +41,8 @@ export async function POST(request: NextRequest) {
       currency = 'KRW',
       customerEmail,
       description,
-      merchantWallet
+      merchantWallet,
+      type = 'DIRECT'
     } = body;
 
     if (!productName || !totalAmount || !merchantWallet) {

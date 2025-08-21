@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { Plus, Copy, ExternalLink, Package, DollarSign, Clock, CheckCircle, Wallet, FileText, ShoppingBag, Store, BookOpen, Filter } from 'lucide-react';
+import { Plus, Copy, ExternalLink, Package, DollarSign, Clock, CheckCircle, Wallet, FileText, ShoppingBag, Store, BookOpen, Filter, AlertCircle, Info, Home } from 'lucide-react';
 import Link from 'next/link';
 
 interface Invoice {
@@ -12,6 +12,7 @@ interface Invoice {
   totalAmount: number;
   currency: string;
   status: string;
+  type: string;
   createdAt: string;
   customerEmail?: string;
   paymentLink?: string;
@@ -24,6 +25,12 @@ interface Merchant {
   email?: string;
 }
 
+interface IntegrationHealth {
+  connected: boolean;
+  status: 'connected' | 'disconnected' | 'error' | 'not_configured' | 'configured';
+  details: any;
+}
+
 export default function MerchantDashboard() {
   const { address, isConnected } = useAccount();
   const [merchant, setMerchant] = useState<Merchant | null>(null);
@@ -33,6 +40,10 @@ export default function MerchantDashboard() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [integrationHealth, setIntegrationHealth] = useState<{
+    shopify: IntegrationHealth;
+    woocommerce: IntegrationHealth;
+  } | null>(null);
   
   // Form state for new invoice
   const [formData, setFormData] = useState({
@@ -40,16 +51,22 @@ export default function MerchantDashboard() {
     totalAmount: '',
     currency: 'KRW',
     customerEmail: '',
-    description: ''
+    description: '',
+    expiresInHours: '24',
+    type: 'DIRECT'
   });
+  
+  const [createdInvoice, setCreatedInvoice] = useState<any>(null);
 
   // Fetch or create merchant account
   useEffect(() => {
     if (isConnected && address) {
       fetchMerchantData();
+      fetchIntegrationHealth();
     } else {
       setMerchant(null);
       setInvoices([]);
+      setIntegrationHealth(null);
       setLoading(false);
     }
   }, [isConnected, address]);
@@ -84,6 +101,18 @@ export default function MerchantDashboard() {
     }
   };
 
+  const fetchIntegrationHealth = async () => {
+    try {
+      const response = await fetch('/api/health/integrations');
+      if (response.ok) {
+        const healthData = await response.json();
+        setIntegrationHealth(healthData.integrations);
+      }
+    } catch (error) {
+      console.error('Error fetching integration health:', error);
+    }
+  };
+
   const createInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Create invoice clicked', { address, formData });
@@ -101,7 +130,8 @@ export default function MerchantDashboard() {
         body: JSON.stringify({
           ...formData,
           totalAmount: parseFloat(formData.totalAmount),
-          merchantWallet: address.toLowerCase()
+          merchantWallet: address.toLowerCase(),
+          type: formData.type
         })
       });
 
@@ -111,14 +141,8 @@ export default function MerchantDashboard() {
         const newInvoice = await res.json();
         console.log('Invoice created successfully:', newInvoice);
         setInvoices([newInvoice, ...invoices]);
-        setShowCreateModal(false);
-        setFormData({
-          productName: '',
-          totalAmount: '',
-          currency: 'KRW',
-          customerEmail: '',
-          description: ''
-        });
+        setCreatedInvoice(newInvoice); // Store the created invoice to show link
+        // Don't close modal immediately, let user see the link
       } else {
         const errorData = await res.json();
         console.error('Error response:', errorData);
@@ -128,6 +152,27 @@ export default function MerchantDashboard() {
       console.error('Error creating invoice:', error);
       alert(`Error creating invoice: ${error.message}`);
     }
+  };
+
+  const closeModal = () => {
+    setShowCreateModal(false);
+    setCreatedInvoice(null);
+    setFormData({
+      productName: '',
+      totalAmount: '',
+      currency: 'KRW',
+      customerEmail: '',
+      description: '',
+      expiresInHours: '24',
+      type: 'DIRECT'
+    });
+  };
+
+  const copyInvoiceLink = (orderId: string) => {
+    const link = `${window.location.origin}/pay?orderId=${orderId}`;
+    navigator.clipboard.writeText(link);
+    setCopiedId(orderId);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const copyPaymentLink = (orderId: string) => {
@@ -251,8 +296,8 @@ export default function MerchantDashboard() {
                         activeFilter === 'all' ? 'bg-blue-100 text-blue-700' : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
-                      <Package className="w-4 h-4" />
-                      <span>All Invoices</span>
+                      <Home className="w-4 h-4" />
+                      <span>Home</span>
                       <span className="ml-auto text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">
                         {invoices.length}
                       </span>
@@ -386,6 +431,102 @@ export default function MerchantDashboard() {
         <div className="flex-1 overflow-auto">
           <div className="p-8">
 
+            {/* Integration Status - Only show on Shopify/WooCommerce pages */}
+            {integrationHealth && (activeFilter === 'shopify' || activeFilter === 'woocommerce') && (
+              <div className="mb-8">
+                <div className="grid grid-cols-1 gap-4">
+                  {/* Show Shopify status only on Shopify page */}
+                  {activeFilter === 'shopify' && (
+                    <div className="bg-white rounded-lg shadow-sm p-4 border-l-4 border-l-green-500">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-3">
+                          <ShoppingBag className={`w-6 h-6 ${
+                            integrationHealth.shopify.connected ? 'text-green-600' : 'text-gray-400'
+                          }`} />
+                          <div>
+                            <h3 className="font-semibold text-gray-900">Shopify Integration</h3>
+                            <p className={`text-sm ${
+                              integrationHealth.shopify.connected ? 'text-green-600' : 'text-gray-500'
+                            }`}>
+                              {integrationHealth.shopify.connected ? 'Connected' : 
+                               integrationHealth.shopify.status === 'not_configured' ? 'Not Configured' : 'Disconnected'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center">
+                          {integrationHealth.shopify.connected ? (
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                          ) : (
+                            <AlertCircle className="w-5 h-5 text-orange-500" />
+                          )}
+                        </div>
+                      </div>
+                      {integrationHealth.shopify.connected && integrationHealth.shopify.details?.shopName && (
+                        <div className="mt-2 text-xs text-gray-600">
+                          Store: {integrationHealth.shopify.details.shopName}
+                        </div>
+                      )}
+                      {!integrationHealth.shopify.connected && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          <p>To connect your Shopify store, please follow the example repository</p>
+                          <a 
+                            href="https://github.com/nickmura/kaia-commerce" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-700 underline"
+                          >
+                            View Setup Guide →
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Show WooCommerce status only on WooCommerce page */}
+                  {activeFilter === 'woocommerce' && (
+                    <div className="bg-white rounded-lg shadow-sm p-4 border-l-4 border-l-purple-500">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Store className={`w-6 h-6 ${
+                            integrationHealth.woocommerce.connected ? 'text-purple-600' : 'text-gray-400'
+                          }`} />
+                          <div>
+                            <h3 className="font-semibold text-gray-900">WooCommerce Integration</h3>
+                            <p className={`text-sm ${
+                              integrationHealth.woocommerce.connected ? 'text-purple-600' : 'text-gray-500'
+                            }`}>
+                              {integrationHealth.woocommerce.connected ? 'Configured' : 
+                               integrationHealth.woocommerce.status === 'not_configured' ? 'Not Configured' : 'Disconnected'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center">
+                          {integrationHealth.woocommerce.connected ? (
+                            <CheckCircle className="w-5 h-5 text-purple-600" />
+                          ) : (
+                            <AlertCircle className="w-5 h-5 text-orange-500" />
+                          )}
+                        </div>
+                      </div>
+                      {!integrationHealth.woocommerce.connected && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          <p>To connect your WooCommerce store, please follow the example repository</p>
+                          <a 
+                            href="https://github.com/nickmura/kaia-commerce" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-700 underline"
+                          >
+                            View Setup Guide →
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-white rounded-lg shadow-sm p-6">
@@ -435,10 +576,20 @@ export default function MerchantDashboard() {
               </h2>
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="inline-flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                disabled={activeFilter === 'shopify' || activeFilter === 'woocommerce'}
+                className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg font-semibold transition-colors ${
+                  activeFilter === 'shopify' || activeFilter === 'woocommerce'
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+                title={
+                  activeFilter === 'shopify' || activeFilter === 'woocommerce'
+                    ? 'Invoices for this platform are created automatically via webhooks'
+                    : 'Create a new invoice'
+                }
               >
                 <Plus className="w-5 h-5" />
-                <span>Create Invoice</span>
+                <span>Create Direct Invoice</span>
               </button>
             </div>
 
@@ -500,13 +651,23 @@ export default function MerchantDashboard() {
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={() => copyPaymentLink(invoice.id)}
-                            className="text-blue-600 hover:text-blue-700 transition-colors"
+                            className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                              copiedId === invoice.id
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                            }`}
                             title="Copy payment link"
                           >
                             {copiedId === invoice.id ? (
-                              <CheckCircle className="w-5 h-5 text-green-600" />
+                              <>
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                <span>Copied!</span>
+                              </>
                             ) : (
-                              <Copy className="w-5 h-5" />
+                              <>
+                                <Copy className="w-3 h-3 mr-1" />
+                                <span>Copy</span>
+                              </>
                             )}
                           </button>
                           <Link
@@ -534,88 +695,214 @@ export default function MerchantDashboard() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Create Invoice</h3>
-            <form onSubmit={createInvoice}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Product Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.productName}
-                    onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Premium Service"
-                  />
+            {!createdInvoice ? (
+              <>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Create Direct Invoice</h3>
+                <form onSubmit={createInvoice}>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Product Name
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.productName}
+                        onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Premium Service"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Amount
+                      </label>
+                      <div className="flex space-x-2">
+                        <input
+                          type="number"
+                          required
+                          min="0"
+                          step="0.01"
+                          value={formData.totalAmount}
+                          onChange={(e) => setFormData({ ...formData, totalAmount: e.target.value })}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="100.00"
+                        />
+                        <select
+                          value={formData.currency}
+                          onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                          className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="KRW">KRW</option>
+                          <option value="USD">USD</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Invoice Type
+                      </label>
+                      <select
+                        value={formData.type}
+                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="DIRECT">Direct Invoice</option>
+                        <option value="SHOPIFY">Shopify Order</option>
+                        <option value="WOOCOMMERCE">WooCommerce Order</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Expires In (Hours)
+                        {(formData.type === 'SHOPIFY' || formData.type === 'WOOCOMMERCE') && (
+                          <span className="text-xs text-gray-500 ml-2">(Managed by platform)</span>
+                        )}
+                      </label>
+                      <select
+                        value={formData.expiresInHours}
+                        onChange={(e) => setFormData({ ...formData, expiresInHours: e.target.value })}
+                        disabled={formData.type === 'SHOPIFY' || formData.type === 'WOOCOMMERCE'}
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          (formData.type === 'SHOPIFY' || formData.type === 'WOOCOMMERCE') 
+                            ? 'bg-gray-100 text-gray-500 cursor-not-allowed' 
+                            : ''
+                        }`}
+                      >
+                        <option value="1">1 Hour</option>
+                        <option value="6">6 Hours</option>
+                        <option value="12">12 Hours</option>
+                        <option value="24">24 Hours (Default)</option>
+                        <option value="48">48 Hours</option>
+                        <option value="72">72 Hours</option>
+                        <option value="168">1 Week</option>
+                        <option value="0">Never Expires</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Customer Email (Optional)
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.customerEmail}
+                        onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="customer@example.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Description (Optional)
+                      </label>
+                      <textarea
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        rows={3}
+                        placeholder="Invoice description..."
+                      />
+                    </div>
+                  </div>
+                  <div className="flex space-x-3 mt-6">
+                    <button
+                      type="button"
+                      onClick={closeModal}
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                    >
+                      Create Invoice
+                    </button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <>
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-10 h-10 text-green-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Invoice Created!</h3>
+                  <p className="text-gray-600">Your payment link is ready to share</p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Amount
+
+                <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                  <h4 className="font-semibold text-gray-900 mb-2">Invoice Details</h4>
+                  <div className="space-y-1 text-sm text-gray-600">
+                    <p><span className="font-medium">ID:</span> {createdInvoice.id.slice(0, 12)}...</p>
+                    <p><span className="font-medium">Type:</span> {formData.type}</p>
+                    <p><span className="font-medium">Product:</span> {formData.productName}</p>
+                    <p><span className="font-medium">Amount:</span> {formData.totalAmount} {formData.currency}</p>
+                    <p><span className="font-medium">Expires:</span> {
+                      (formData.type === 'SHOPIFY' || formData.type === 'WOOCOMMERCE') 
+                        ? 'Managed by platform' 
+                        : (formData.expiresInHours === '0' ? 'Never' : `${formData.expiresInHours} hours`)
+                    }</p>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Payment Link
                   </label>
                   <div className="flex space-x-2">
                     <input
-                      type="number"
-                      required
-                      min="0"
-                      step="0.01"
-                      value={formData.totalAmount}
-                      onChange={(e) => setFormData({ ...formData, totalAmount: e.target.value })}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="100.00"
+                      type="text"
+                      readOnly
+                      value={`${window.location.origin}/pay?orderId=${createdInvoice.id}`}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm"
                     />
-                    <select
-                      value={formData.currency}
-                      onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    <button
+                      type="button"
+                      onClick={() => copyInvoiceLink(createdInvoice.id)}
+                      className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors ${
+                        copiedId === createdInvoice.id
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                      title="Copy link"
                     >
-                      <option value="KRW">KRW</option>
-                      <option value="USD">USD</option>
-                    </select>
+                      {copiedId === createdInvoice.id ? (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          <span>Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4 mr-2" />
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
                   </div>
+                  {copiedId === createdInvoice.id && (
+                    <p className="text-sm text-green-600 mt-2">✓ Link copied to clipboard!</p>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Customer Email (Optional)
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.customerEmail}
-                    onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="customer@example.com"
-                  />
+
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                  >
+                    Close
+                  </button>
+                  <Link
+                    href={`/pay?orderId=${createdInvoice.id}`}
+                    target="_blank"
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-center"
+                  >
+                    View Invoice
+                  </Link>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description (Optional)
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={3}
-                    placeholder="Invoice description..."
-                  />
-                </div>
-              </div>
-              <div className="flex space-x-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-                >
-                  Create Invoice
-                </button>
-              </div>
-            </form>
+              </>
+            )}
           </div>
         </div>
       )}

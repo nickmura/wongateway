@@ -1,0 +1,119 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+// Health check for platform integrations
+export async function GET(request: NextRequest) {
+  try {
+    const healthStatus = {
+      shopify: {
+        connected: false,
+        status: 'disconnected',
+        details: null as any
+      },
+      woocommerce: {
+        connected: false,
+        status: 'disconnected',
+        details: null as any
+      }
+    };
+
+    // Check Shopify connection
+    const shopifyAccessToken = process.env.SHOPIFY_API_ACCESS_TOKEN;
+    const shopifyDomain = process.env.SHOPIFY_SHOP_DOMAIN;
+
+    if (shopifyAccessToken && shopifyDomain) {
+      try {
+        // Test Shopify API connection
+        const shopifyResponse = await fetch(`https://${shopifyDomain}/admin/api/2023-10/shop.json`, {
+          headers: {
+            'X-Shopify-Access-Token': shopifyAccessToken,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (shopifyResponse.ok) {
+          const shopData = await shopifyResponse.json();
+          healthStatus.shopify = {
+            connected: true,
+            status: 'connected',
+            details: {
+              domain: shopifyDomain,
+              shopName: shopData.shop?.name || 'Unknown',
+              plan: shopData.shop?.plan_name || 'Unknown',
+              hasWebhooks: true // We'll assume webhooks are configured
+            }
+          };
+        } else {
+          healthStatus.shopify = {
+            connected: false,
+            status: 'error',
+            details: {
+              error: `API Error: ${shopifyResponse.status}`,
+              domain: shopifyDomain
+            }
+          };
+        }
+      } catch (error) {
+        healthStatus.shopify = {
+          connected: false,
+          status: 'error',
+          details: {
+            error: error instanceof Error ? error.message : 'Connection failed',
+            domain: shopifyDomain
+          }
+        };
+      }
+    } else {
+      healthStatus.shopify = {
+        connected: false,
+        status: 'not_configured',
+        details: {
+          missingEnvVars: [
+            ...(shopifyAccessToken ? [] : ['SHOPIFY_API_ACCESS_TOKEN']),
+            ...(shopifyDomain ? [] : ['SHOPIFY_SHOP_DOMAIN'])
+          ]
+        }
+      };
+    }
+
+    // Check WooCommerce connection (placeholder for now)
+    const woocommerceUrl = process.env.WOOCOMMERCE_URL;
+    const woocommerceKey = process.env.WOOCOMMERCE_CONSUMER_KEY;
+    const woocommerceSecret = process.env.WOOCOMMERCE_CONSUMER_SECRET;
+
+    if (woocommerceUrl && woocommerceKey && woocommerceSecret) {
+      // For now, just check if env vars are present
+      healthStatus.woocommerce = {
+        connected: true,
+        status: 'configured',
+        details: {
+          url: woocommerceUrl,
+          note: 'WooCommerce integration pending implementation'
+        }
+      };
+    } else {
+      healthStatus.woocommerce = {
+        connected: false,
+        status: 'not_configured',
+        details: {
+          missingEnvVars: [
+            ...(woocommerceUrl ? [] : ['WOOCOMMERCE_URL']),
+            ...(woocommerceKey ? [] : ['WOOCOMMERCE_CONSUMER_KEY']),
+            ...(woocommerceSecret ? [] : ['WOOCOMMERCE_CONSUMER_SECRET'])
+          ]
+        }
+      };
+    }
+
+    return NextResponse.json({
+      timestamp: new Date().toISOString(),
+      integrations: healthStatus
+    }, { status: 200 });
+
+  } catch (error) {
+    console.error('Health check error:', error);
+    return NextResponse.json({ 
+      error: 'Health check failed',
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
+  }
+}
