@@ -162,7 +162,16 @@
         </p>
       {% endif %}
 
-
+      {% comment %} START: Custom KRW payment instructions {% endcomment %}
+      {% if transaction.gateway == 'KRW' %}
+        <p>
+          Please follow this link to complete your payment: <a href="https://kaia-commerce.vercel.app/pay?orderId={{ order.id }}">Payment Link</a>
+        </p>
+        <p>
+          Instructions: Please input your order number when prompted.
+        </p>
+      {% endif %}
+      {% comment %} END: Custom KRW payment instructions {% endcomment %}
 
     {% endfor%}
   {% endif %}
