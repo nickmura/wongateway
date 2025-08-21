@@ -58,19 +58,6 @@ export default function MerchantDashboard() {
   
   const [createdInvoice, setCreatedInvoice] = useState<Invoice | null>(null);
 
-  // Fetch or create merchant account
-  useEffect(() => {
-    if (isConnected && address) {
-      fetchMerchantData();
-      fetchIntegrationHealth();
-    } else {
-      setMerchant(null);
-      setInvoices([]);
-      setIntegrationHealth(null);
-      setLoading(false);
-    }
-  }, [isConnected, address, fetchMerchantData]);
-
   const fetchMerchantData = useCallback(async () => {
     if (!address) return;
     
@@ -112,6 +99,19 @@ export default function MerchantDashboard() {
       console.error('Error fetching integration health:', error);
     }
   };
+
+  // Fetch or create merchant account
+  useEffect(() => {
+    if (isConnected && address) {
+      fetchMerchantData();
+      fetchIntegrationHealth();
+    } else {
+      setMerchant(null);
+      setInvoices([]);
+      setIntegrationHealth(null);
+      setLoading(false);
+    }
+  }, [isConnected, address, fetchMerchantData]);
 
   const createInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -234,7 +234,9 @@ export default function MerchantDashboard() {
           <p className="text-gray-600 mb-6">
             Connect your wallet to access your merchant dashboard and create invoices.
           </p>
-          <ConnectButton />
+          <div className="flex justify-center">
+            <ConnectButton />
+          </div>
         </div>
       </div>
     );
