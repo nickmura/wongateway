@@ -69,6 +69,11 @@ npx prisma studio # Database GUI
 
 ---
 
-**Live Demo**: [kaia-commerce.myshopify.com](https://kaia-commerce.myshopify.com)
+**Live Demo**: [kaia-commerce.vercel.app](https://kaia-commerce.vercel.app)
+
+**Live Demo (Shopify)**: [kaia-commerce.myshopify.com](https://kaia-commerce.myshopify.com)
+
+
+
 
 **Built for the Kaia ecosystem**
