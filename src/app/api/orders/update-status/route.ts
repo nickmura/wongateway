@@ -1,6 +1,98 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// Function to mark Shopify order as paid
+async function markShopifyOrderAsPaid(adminGraphqlApiId: string, shopDomain?: string) {
+  const shopifyAccessToken = process.env.SHOPIFY_API_ACCESS_TOKEN;
+  const fallbackShopDomain = process.env.SHOPIFY_SHOP_DOMAIN;
+  
+  if (!shopifyAccessToken) {
+    console.error('SHOPIFY_API_ACCESS_TOKEN not found in environment variables');
+    return false;
+  }
+
+  const domain = shopDomain || fallbackShopDomain;
+  if (!domain) {
+    console.error('Shop domain not provided and SHOPIFY_SHOP_DOMAIN not found in environment variables');
+    return false;
+  }
+
+  const mutation = `
+    mutation orderMarkAsPaid($input: OrderMarkAsPaidInput!) {
+      orderMarkAsPaid(input: $input) {
+        userErrors {
+          field
+          message
+        }
+        order {
+          id
+          name
+          canMarkAsPaid
+          displayFinancialStatus
+          totalPrice
+          totalOutstandingSet {
+            shopMoney {
+              amount
+              currencyCode
+            }
+          }
+          transactions(first: 10) {
+            id
+            kind
+            status
+            amountSet {
+              shopMoney {
+                amount
+                currencyCode
+              }
+            }
+            gateway
+            createdAt
+          }
+        }
+      }
+    }
+  `;
+
+  const variables = {
+    input: {
+      id: adminGraphqlApiId
+    }
+  };
+
+  try {
+    const response = await fetch(`https://${domain}/admin/api/2025-07/graphql.json`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': shopifyAccessToken,
+      },
+      body: JSON.stringify({
+        query: mutation,
+        variables: variables
+      })
+    });
+
+    const result = await response.json();
+    
+    if (result.errors) {
+      console.error('Shopify GraphQL errors:', result.errors);
+      return false;
+    }
+
+    if (result.data?.orderMarkAsPaid?.userErrors?.length > 0) {
+      console.error('Shopify order mark as paid errors:', result.data.orderMarkAsPaid.userErrors);
+      return false;
+    }
+
+    console.log('Successfully marked Shopify order as paid:', result.data?.orderMarkAsPaid?.order?.name);
+    return true;
+  } catch (error) {
+    console.error('Failed to mark Shopify order as paid:', error);
+    return false;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -18,6 +110,16 @@ export async function POST(request: NextRequest) {
         paidAt: status === 'PAID' ? new Date() : undefined,
       }
     });
+
+    // If this is a Shopify order being marked as paid, notify Shopify
+    if (status === 'PAID' && order.type === 'SHOPIFY' && order.adminGraphqlApiId) {
+      console.log('Marking Shopify order as paid:', order.adminGraphqlApiId);
+      const shopifySuccess = await markShopifyOrderAsPaid(order.adminGraphqlApiId, order.shopDomain || undefined);
+      
+      if (!shopifySuccess) {
+        console.warn('Failed to mark Shopify order as paid, but continuing with local update');
+      }
+    }
 
     return NextResponse.json({ success: true, order }, { status: 200 });
   } catch (error) {

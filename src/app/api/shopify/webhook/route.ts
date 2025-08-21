@@ -16,14 +16,19 @@ export async function POST(request: NextRequest) {
     const body = await request.text();
     const data = JSON.parse(body);
 
+    // Extract shop domain from headers (Shopify sends this in X-Shopify-Shop-Domain header)
+    const shopDomain = request.headers.get('x-shopify-shop-domain') || process.env.SHOPIFY_SHOP_DOMAIN;
+
     // Extract vendor from first line item (they should all be the same vendor)
     const vendor = data.line_items?.[0]?.vendor || 'Unknown Vendor';
+    
     // Extract product info from first line item
     const firstProduct = data.line_items?.[0] || {};
     
     // Extract required fields
     const extractedData = {
       id: data.id,
+      admin_graphql_api_id: data.admin_graphql_api_id,
       confirmation_number: data.confirmation_number,
       contact_email: data.contact_email || data.email,
       total_price: data.current_total_price,
@@ -33,7 +38,8 @@ export async function POST(request: NextRequest) {
       fulfillment_status: data.fulfillment_status,
       vendor: vendor,
       product_name: firstProduct.title || 'Unknown Product',
-      product_price: firstProduct.price || '0'
+      product_price: firstProduct.price || '0',
+      shop_domain: shopDomain
     };
 
     console.log('Shopify webhook - extracted data:', extractedData);
@@ -65,7 +71,8 @@ export async function POST(request: NextRequest) {
         orderConfirmation: `${extractedData.confirmation_number}`,
         customerEmail: extractedData.contact_email,
         customerWallet: null,
-        paymentMethod: 'shopify'
+        paymentMethod: 'shopify',
+        adminGraphqlApiId: extractedData.admin_graphql_api_id
       }
     });
 

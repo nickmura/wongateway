@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { ChevronRight, Info, Wallet, CheckCircle, Clock, AlertCircle, DollarSign } from 'lucide-react';
+import { ChevronRight, Info, Wallet, CheckCircle, Clock, AlertCircle, DollarSign, Languages } from 'lucide-react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { 
   useAccount, 
@@ -29,7 +29,7 @@ interface PaymentData {
   currency: string;
   merchant: string;
   product: string;
-  orderId: string;
+  orderId: string | null;
   description?: string;
 }
 
@@ -41,11 +41,178 @@ const MERCHANT_ADDRESS = '0x742d35cc6634c0532925a3b844bc9e7595f0beb7' as `0x${st
 
 interface PaymentClientProps {
   paymentData: PaymentData;
+  initialLang?: 'en' | 'ko';
 }
 
-export default function PaymentClient({ paymentData }: PaymentClientProps) {
+export default function PaymentClient({ paymentData, initialLang = 'en' }: PaymentClientProps) {
+  const [language, setLanguage] = useState<'en' | 'ko'>(initialLang);
   const [selectedMethod, setSelectedMethod] = useState<string>('krw');
   const networkFee = 0.02;
+
+  const content = {
+    en: {
+      selection: {
+        title: 'Secure Payment',
+        subtitle: 'Choose your payment method',
+        orderInfo: 'Order Information',
+        merchant: 'Merchant',
+        product: 'Product',
+        amount: 'Amount',
+        paymentMethod: 'Payment Method',
+        selectMethod: 'Select a payment method',
+        balance: 'Balance',
+        networkFee: 'Network fee',
+        total: 'Total',
+        payNow: 'Pay Now',
+        connectWallet: 'Please connect your wallet first'
+      },
+      confirmation: {
+        title: 'Confirm Payment',
+        subtitle: 'Review your order details',
+        orderInfo: 'Order Information',
+        orderId: 'Order ID',
+        confirmation: 'Confirmation',
+        merchant: 'Merchant',
+        product: 'Product',
+        amount: 'Amount',
+        paymentMethod: 'Payment Method',
+        subtotal: 'Subtotal',
+        networkFee: 'Network Fee',
+        total: 'Total',
+        insufficientBalance: 'Insufficient balance',
+        required: 'Required',
+        available: 'Available',
+        processTitle: 'Payment Process:',
+        processSteps: [
+          'Approve KRW token spending',
+          'Confirm the transfer transaction',
+          'Wait for blockchain confirmation'
+        ],
+        back: 'Back',
+        payNow: 'Pay Now'
+      },
+      processing: {
+        title: 'Processing Payment',
+        subtitle: 'Please confirm transactions in your wallet',
+        approvalTitle: 'Token Approval',
+        transferTitle: 'Transfer Payment',
+        approvalStates: {
+          waiting: 'Waiting for wallet confirmation...',
+          submitted: 'Transaction submitted, confirming...',
+          approved: 'Approved successfully',
+          pending: 'Allow KRW token spending'
+        },
+        transferStates: {
+          waiting: 'Waiting for wallet confirmation...',
+          submitted: 'Transaction submitted, confirming...',
+          completed: 'Payment sent successfully',
+          pending: 'Send KRW to merchant'
+        },
+        statusTitle: 'Transaction in Progress',
+        statusMessages: {
+          approving: 'Please approve the transaction in your wallet...',
+          transferring: 'Please confirm the transfer in your wallet...',
+          completed: 'Payment completed successfully!',
+          error: 'Transaction failed. Please try again.'
+        },
+        errorDetails: 'Error Details:',
+        tryAgain: 'Try Again'
+      },
+      success: {
+        title: 'Payment Successful!',
+        subtitle: 'Your transaction has been confirmed',
+        transactionDetails: 'Transaction Details',
+        orderId: 'Order ID',
+        amountPaid: 'Amount Paid',
+        merchant: 'Merchant',
+        transactionHash: 'Transaction Hash',
+        thankYou: 'Thank you for your purchase! You will receive a confirmation email shortly.',
+        makeAnother: 'Make Another Payment'
+      }
+    },
+    ko: {
+      selection: {
+        title: '안전한 결제',
+        subtitle: '결제 수단을 선택하세요',
+        orderInfo: '주문 정보',
+        merchant: '판매자',
+        product: '상품',
+        amount: '금액',
+        paymentMethod: '결제 수단',
+        selectMethod: '결제 수단을 선택하세요',
+        balance: '잔액',
+        networkFee: '네트워크 수수료',
+        total: '총액',
+        payNow: '지금 결제',
+        connectWallet: '먼저 지갑을 연결해주세요'
+      },
+      confirmation: {
+        title: '결제 확인',
+        subtitle: '주문 내역을 확인하세요',
+        orderInfo: '주문 정보',
+        orderId: '주문 ID',
+        confirmation: '확인 번호',
+        merchant: '판매자',
+        product: '상품',
+        amount: '금액',
+        paymentMethod: '결제 수단',
+        subtotal: '소계',
+        networkFee: '네트워크 수수료',
+        total: '총액',
+        insufficientBalance: '잔액 부족',
+        required: '필요',
+        available: '사용 가능',
+        processTitle: '결제 과정:',
+        processSteps: [
+          'KRW 토큰 사용 승인',
+          '전송 거래 확인',
+          '블록체인 확인 대기'
+        ],
+        back: '뒤로',
+        payNow: '지금 결제'
+      },
+      processing: {
+        title: '결제 처리 중',
+        subtitle: '지갑에서 거래를 확인해주세요',
+        approvalTitle: '토큰 승인',
+        transferTitle: '결제 전송',
+        approvalStates: {
+          waiting: '지갑 확인을 기다리는 중...',
+          submitted: '거래가 제출되었습니다. 확인 중...',
+          approved: '성공적으로 승인되었습니다',
+          pending: 'KRW 토큰 사용을 허용하세요'
+        },
+        transferStates: {
+          waiting: '지갑 확인을 기다리는 중...',
+          submitted: '거래가 제출되었습니다. 확인 중...',
+          completed: '결제가 성공적으로 전송되었습니다',
+          pending: '판매자에게 KRW를 전송하세요'
+        },
+        statusTitle: '거래 진행 중',
+        statusMessages: {
+          approving: '지갑에서 거래를 승인해주세요...',
+          transferring: '지갑에서 전송을 확인해주세요...',
+          completed: '결제가 성공적으로 완료되었습니다!',
+          error: '거래가 실패했습니다. 다시 시도해주세요.'
+        },
+        errorDetails: '오류 세부사항:',
+        tryAgain: '다시 시도'
+      },
+      success: {
+        title: '결제 성공!',
+        subtitle: '거래가 확인되었습니다',
+        transactionDetails: '거래 세부사항',
+        orderId: '주문 ID',
+        amountPaid: '결제 금액',
+        merchant: '판매자',
+        transactionHash: '거래 해시',
+        thankYou: '구매해 주셔서 감사합니다! 곧 확인 이메일을 받으실 것입니다.',
+        makeAnother: '다른 결제하기'
+      }
+    }
+  };
+
+  const t = content[language];
   const [paymentStep, setPaymentStep] = useState<PaymentStep>('selection');
   const [txStatus, setTxStatus] = useState<TransactionStatus>('idle');
   const [tokenAmount, setTokenAmount] = useState<bigint>(BigInt(0));
@@ -176,7 +343,7 @@ export default function PaymentClient({ paymentData }: PaymentClientProps) {
   // Handle initial payment button click
   const handlePaymentClick = () => {
     if (!isConnected) {
-      alert('Please connect your wallet first');
+      alert(t.selection.connectWallet);
       return;
     }
     setPaymentStep('confirmation');
@@ -272,25 +439,30 @@ export default function PaymentClient({ paymentData }: PaymentClientProps) {
     if (isTransferConfirmed && transferHash) {
       setTxStatus('completed');
       
-      // Update order status to PAID
-      fetch('/api/orders/update-status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId: paymentData.orderId,
-          status: 'PAID',
-          transferHash: transferHash
+      // Update order status to PAID only if we have an orderId
+      if (paymentData.orderId) {
+        fetch('/api/orders/update-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: paymentData.orderId,
+            status: 'PAID',
+            transferHash: transferHash
+          })
         })
-      })
-      .then(res => res.json())
-      .then(data => {
-        console.log('Order status updated:', data);
+        .then(res => res.json())
+        .then(data => {
+          console.log('Order status updated:', data);
+          setPaymentStep('success');
+        })
+        .catch(error => {
+          console.error('Failed to update order status:', error);
+          setPaymentStep('success'); // Still show success to user
+        });
+      } else {
+        // For demo payments without order ID, just proceed to success
         setPaymentStep('success');
-      })
-      .catch(error => {
-        console.error('Failed to update order status:', error);
-        setPaymentStep('success'); // Still show success to user
-      });
+      }
     }
   }, [isTransferConfirmed, transferHash, paymentData.orderId]);
 
@@ -325,16 +497,27 @@ export default function PaymentClient({ paymentData }: PaymentClientProps) {
           {paymentStep === 'selection' && (
             <>
               {/* Header */}
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white relative">
+                {/* Language Toggle */}
+                <button
+                  onClick={() => setLanguage(language === 'en' ? 'ko' : 'en')}
+                  className="absolute top-4 right-4 flex items-center space-x-1 bg-white/20 hover:bg-white/30 rounded-lg px-3 py-1.5 transition-colors"
+                >
+                  <Languages className="w-4 h-4" />
+                  <span className="text-sm font-medium">{language === 'en' ? 'KO' : 'EN'}</span>
+                </button>
+                
                 <div className="flex items-center justify-center mb-4">
                   <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center">
                     <Wallet className="w-8 h-8 text-white" />
                   </div>
                 </div>
                 <h1 className="text-center text-3xl font-bold" style={{ color: 'white' }}>
-                  Pay {paymentData.amount.toFixed(2)} {paymentData.currency}
+                  {language === 'ko' ? '결제' : 'Pay'} {paymentData.amount.toLocaleString()} {paymentData.currency}
                 </h1>
-                <p className="text-center mt-2" style={{ color: 'white' }}>to {paymentData.merchant}</p>
+                <p className="text-center mt-2" style={{ color: 'white' }}>
+                  {language === 'ko' ? '판매자' : 'to'} {paymentData.merchant}
+                </p>
                 
                 {isConnected && address && (
                   <p className="text-center text-xs mt-3" style={{ color: 'white' }}>
@@ -477,10 +660,12 @@ export default function PaymentClient({ paymentData }: PaymentClientProps) {
                 <div className="mb-6">
                   <h3 className="font-semibold text-black mb-3">Order Information</h3>
                   <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Order ID</span>
-                      <span className="font-medium text-black">{paymentData.orderId}</span>
-                    </div>
+                    {paymentData.orderId && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Order ID</span>
+                        <span className="font-medium text-black">{paymentData.orderId}</span>
+                      </div>
+                    )}
                     {paymentData.description && (
                       <div className="flex justify-between">
                         <span className="text-gray-600">Confirmation</span>
@@ -598,7 +783,9 @@ export default function PaymentClient({ paymentData }: PaymentClientProps) {
                     style={{ color: 'white !important' }}
                   >
                     <span style={{ color: 'white !important' }}>
-                      {hasInsufficientBalance ? 'Insufficient Balance' : 'Pay Now'}
+                      {hasInsufficientBalance ? 
+                        (language === 'ko' ? '잔액 부족' : 'Insufficient Balance') : 
+                        (language === 'ko' ? '지금 결제' : 'Pay Now')}
                     </span>
                   </button>
                 </div>
@@ -746,10 +933,12 @@ export default function PaymentClient({ paymentData }: PaymentClientProps) {
                 <div className="bg-green-50 rounded-lg p-4 mb-6">
                   <h3 className="font-semibold text-green-900 mb-2">Transaction Details</h3>
                   <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-green-700">Order ID</span>
-                      <span className="font-medium text-green-900">{paymentData.orderId}</span>
-                    </div>
+                    {paymentData.orderId && (
+                      <div className="flex justify-between">
+                        <span className="text-green-700">Order ID</span>
+                        <span className="font-medium text-green-900">{paymentData.orderId}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-green-700">Amount Paid</span>
                       <span className="font-medium text-green-900">{total.toFixed(2)} {paymentData.currency}</span>

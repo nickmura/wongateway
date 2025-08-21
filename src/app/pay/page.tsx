@@ -10,6 +10,7 @@ interface PaymentPageProps {
     product?: string;
     orderId?: string;
     description?: string;
+    lang?: string;
   }>;
 }
 
@@ -39,7 +40,7 @@ async function fetchPaymentData(params: Awaited<PaymentPageProps['searchParams']
     }
   }
 
-  // Otherwise, create a new order from URL parameters
+  // Otherwise, return demo data without creating a database entry
   const defaultData = {
     amount: 99.00,
     currency: 'KRW',
@@ -56,33 +57,23 @@ async function fetchPaymentData(params: Awaited<PaymentPageProps['searchParams']
     description: params.description || defaultData.description,
   };
 
-  // Create new order with simplified schema
-  const order = await prisma.order.create({
-    data: {
-      merchantName: orderData.merchant,
-      productName: orderData.product,
-      orderConfirmation: orderData.description,
-      totalAmount: orderData.amount,
-      currency: orderData.currency,
-      status: 'PENDING'
-    }
-  });
-
+  // Return demo data without creating database entry
   return {
-    amount: order.totalAmount,
-    currency: order.currency,
-    merchant: order.merchantName,
-    product: order.productName,
-    orderId: order.id,
-    description: order.orderConfirmation || '',
+    amount: orderData.amount,
+    currency: orderData.currency,
+    merchant: orderData.merchant,
+    product: orderData.product,
+    orderId: null, // No order ID for demo data
+    description: orderData.description,
   };
 }
 
 export default async function PaymentPage({ searchParams }: PaymentPageProps) {
   const resolvedSearchParams = await searchParams;
   const paymentData = await fetchPaymentData(resolvedSearchParams);
+  const initialLang = resolvedSearchParams.lang === 'ko' ? 'ko' : 'en';
 
-  return <PaymentClient paymentData={paymentData} />;
+  return <PaymentClient paymentData={paymentData} initialLang={initialLang} />;
 }
 
 export async function generateMetadata({ searchParams }: PaymentPageProps) {
