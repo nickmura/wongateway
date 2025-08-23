@@ -25,12 +25,12 @@ export async function POST(request: NextRequest) {
         error: 'No merchant configured' 
       }, { status: 500 });
     }
-
     // Extract required fields from WooCommerce webhook payload
     const extractedData = {
       basic_id: data.order_id,
       order_key_id: data.order_key,
       contact_email: data.email,
+      store_name: data.store_name,
       total_price: data.total,
       currency_code: data.currency_code,
       product_name: data.product_name,
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
         status: 'PENDING',
         totalAmount: parseFloat(extractedData.total_price),
         currency: extractedData.currency_code,
-        merchantName: merchant.name,
+        merchantName: extractedData.store_name,
         merchantWallet: merchant.walletAddress,
         productName: extractedData.product_name,
         orderConfirmation: String(extractedData.basic_id),

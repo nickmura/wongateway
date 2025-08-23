@@ -168,7 +168,7 @@ export default function MerchantDashboard() {
       }
     } catch (error) {
       console.error('Error creating invoice:', error);
-      alert(`Error creating invoice: ${error.message}`);
+      alert(`Error creating invoice: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -484,11 +484,11 @@ export default function MerchantDashboard() {
                           )}
                         </div>
                       </div>
-                      {integrationHealth?.shopify?.connected && integrationHealth?.shopify?.details?.shopName && (
+                      {integrationHealth?.shopify?.connected && integrationHealth?.shopify?.details?.shopName ? (
                         <div className="mt-2 text-xs text-gray-600">
-                          Store: {integrationHealth?.shopify?.details?.shopName}
+                          Store: {String(integrationHealth.shopify.details.shopName)}
                         </div>
-                      )}
+                      ) : null}
                       {!integrationHealth?.shopify?.connected && (
                         <div className="mt-2 text-xs text-gray-500">
                           <p>To connect your Shopify store, please follow the example repository</p>
