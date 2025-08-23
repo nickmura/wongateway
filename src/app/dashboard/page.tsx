@@ -1,10 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useBalance } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Plus, Copy, ExternalLink, Package, Clock, CheckCircle, Wallet, FileText, ShoppingBag, Store, BookOpen, Filter, AlertCircle, Home, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { parseUnits, erc20Abi } from 'viem';
+
+// Token addresses
+const KRW_TOKEN_ADDRESS = '0x865d6a906c2f5506729c7d0bc0f6Dc6a3Cbf433c' as `0x${string}`;
 
 interface Invoice {
   id: string;
@@ -16,6 +20,15 @@ interface Invoice {
   createdAt: string;
   customerEmail?: string;
   paymentLink?: string;
+  transferHash?: string;
+  refundTransferHash?: string;
+  refundedAt?: string;
+  blockNumber?: number;
+  customerWallet?: string;
+  tokenAddress?: string;
+  gasUsed?: string;
+  paidAt?: string;
+  merchantWallet?: string;
 }
 
 interface Merchant {
@@ -37,14 +50,38 @@ export default function MerchantDashboard() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isProcessingRefund, setIsProcessingRefund] = useState(false);
   const [integrationHealth, setIntegrationHealth] = useState<{
     shopify: IntegrationHealth;
     woocommerce: IntegrationHealth;
   } | null>(null);
+
+  // Refund transaction hooks
+  const { 
+    data: refundTxHash,
+    writeContract: writeRefund,
+    isPending: isRefunding,
+    isError: isRefundError,
+    error: refundError
+  } = useWriteContract();
+
+  // Wait for refund transaction confirmation
+  const { isLoading: isRefundConfirming, isSuccess: isRefundConfirmed } = 
+    useWaitForTransactionReceipt({ 
+      hash: refundTxHash
+    });
+
+  // Get merchant's KRW balance for refunds
+  const { data: krwBalance } = useBalance({
+    address: address,
+    token: KRW_TOKEN_ADDRESS,
+  });
   
   // Form state for new invoice
   const [formData, setFormData] = useState({
@@ -58,6 +95,16 @@ export default function MerchantDashboard() {
   });
   
   const [createdInvoice, setCreatedInvoice] = useState<Invoice | null>(null);
+
+  const openInvoiceDetails = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setShowDetailsModal(true);
+  };
+
+  const closeDetailsModal = () => {
+    setShowDetailsModal(false);
+    setSelectedInvoice(null);
+  };
 
   const fetchMerchantData = useCallback(async () => {
     if (!address) return;
@@ -79,6 +126,7 @@ export default function MerchantDashboard() {
         const invoicesRes = await fetch(`/api/merchants/invoices?wallet=${address.toLowerCase()}`);
         if (invoicesRes.ok) {
           const invoicesData = await invoicesRes.json();
+          console.log('Fetched invoices:', invoicesData);
           setInvoices(invoicesData);
         }
       }
@@ -109,6 +157,7 @@ export default function MerchantDashboard() {
       const invoicesRes = await fetch(`/api/merchants/invoices?wallet=${address.toLowerCase()}`);
       if (invoicesRes.ok) {
         const invoicesData = await invoicesRes.json();
+        console.log('Refreshed invoices:', invoicesData);
         setInvoices(invoicesData);
       }
     } catch (error) {
@@ -130,6 +179,39 @@ export default function MerchantDashboard() {
       setLoading(false);
     }
   }, [isConnected, address, fetchMerchantData]);
+
+  // Handle refund transaction confirmation
+  useEffect(() => {
+    if (isRefundConfirmed && refundTxHash && selectedInvoice) {
+      console.log('Refund confirmed, updating database:', { 
+        orderId: selectedInvoice.id, 
+        refundTxHash 
+      });
+      
+      // Update order status in database
+      fetch('/api/orders/refund', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: selectedInvoice.id,
+          refundTransferHash: refundTxHash
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        console.log('Refund API response:', data);
+        alert('Refund processed successfully!');
+        refreshInvoices();
+        closeDetailsModal();
+        setIsProcessingRefund(false);
+      })
+      .catch(error => {
+        console.error('Failed to update refund status:', error);
+        alert('Refund transaction successful but failed to update status');
+        setIsProcessingRefund(false);
+      });
+    }
+  }, [isRefundConfirmed, refundTxHash, selectedInvoice, refreshInvoices, closeDetailsModal]);
 
   const createInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -212,6 +294,8 @@ export default function MerchantDashboard() {
         return invoices.filter(invoice => invoice.status === 'PENDING');
       case 'paid':
         return invoices.filter(invoice => invoice.status === 'PAID');
+      case 'refunded':
+        return invoices.filter(invoice => invoice.status === 'REFUNDED');
       default:
         return invoices;
     }
@@ -227,6 +311,8 @@ export default function MerchantDashboard() {
         return 'text-yellow-600 bg-yellow-100';
       case 'FAILED':
         return 'text-red-600 bg-red-100';
+      case 'REFUNDED':
+        return 'text-purple-600 bg-purple-100';
       default:
         return 'text-gray-600 bg-gray-100';
     }
@@ -238,6 +324,10 @@ export default function MerchantDashboard() {
         return <CheckCircle className="w-4 h-4" />;
       case 'PENDING':
         return <Clock className="w-4 h-4" />;
+      case 'REFUNDED':
+        return <RefreshCw className="w-4 h-4" />;
+      case 'FAILED':
+        return <AlertCircle className="w-4 h-4" />;
       default:
         return <Package className="w-4 h-4" />;
     }
@@ -389,6 +479,18 @@ export default function MerchantDashboard() {
                       <span>Paid</span>
                       <span className="ml-auto text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">
                         {invoices.filter(i => i.status === 'PAID').length}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => setActiveFilter('refunded')}
+                      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left text-sm transition-colors ${
+                        activeFilter === 'refunded' ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      <span>Refunded</span>
+                      <span className="ml-auto text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">
+                        {invoices.filter(i => i.status === 'REFUNDED').length}
                       </span>
                     </button>
                   </nav>
@@ -595,7 +697,8 @@ export default function MerchantDashboard() {
                  activeFilter === 'shopify' ? 'Shopify Orders' :
                  activeFilter === 'woocommerce' ? 'WooCommerce Orders' :
                  activeFilter === 'pending' ? 'Pending Invoices' :
-                 activeFilter === 'paid' ? 'Paid Invoices' : 'Invoices'}
+                 activeFilter === 'paid' ? 'Paid Invoices' : 
+                 activeFilter === 'refunded' ? 'Refunded Invoices' : 'Invoices'}
               </h2>
               <div className="flex items-center space-x-2">
                 <button
@@ -665,8 +768,14 @@ export default function MerchantDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredInvoices.map((invoice) => (
-                    <tr key={invoice.id} className="hover:bg-gray-50">
+                  {filteredInvoices.map((invoice) => {
+                    console.log('Invoice status:', invoice.id, invoice.status);
+                    return (
+                    <tr 
+                      key={invoice.id} 
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => openInvoiceDetails(invoice)}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {invoice.id.slice(0, 8)}...
                       </td>
@@ -686,7 +795,7 @@ export default function MerchantDashboard() {
                         {new Date(invoice.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => copyPaymentLink(invoice.id)}
                             className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium transition-colors ${
@@ -719,7 +828,7 @@ export default function MerchantDashboard() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>
@@ -941,6 +1050,288 @@ export default function MerchantDashboard() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Invoice Details Modal */}
+      {showDetailsModal && selectedInvoice && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Invoice Details</h3>
+              <button
+                onClick={closeDetailsModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Status Badge */}
+            <div className="mb-6">
+              <span className={`inline-flex items-center space-x-1 px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(selectedInvoice.status)}`}>
+                {getStatusIcon(selectedInvoice.status)}
+                <span>{selectedInvoice.status}</span>
+              </span>
+            </div>
+
+            {/* Invoice Information Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Order Information</h4>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-500">Invoice ID</p>
+                    <p className="text-sm font-medium text-gray-900 font-mono">{selectedInvoice.id}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Type</p>
+                    <p className="text-sm font-medium text-gray-900">{selectedInvoice.type}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Product Name</p>
+                    <p className="text-sm font-medium text-gray-900">{selectedInvoice.productName}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Amount</p>
+                    <p className="text-sm font-medium text-gray-900">{selectedInvoice.totalAmount} {selectedInvoice.currency}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Customer Information</h4>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-500">Customer Email</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {selectedInvoice.customerEmail || 'Not provided'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Customer Wallet</p>
+                    <p className="text-sm font-medium text-gray-900 font-mono">
+                      {selectedInvoice.customerWallet || 'Not connected yet'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Created Date</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {new Date(selectedInvoice.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  {selectedInvoice.paidAt && (
+                    <div>
+                      <p className="text-xs text-gray-500">Paid Date</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {new Date(selectedInvoice.paidAt).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Transaction Information - Only show if paid */}
+            {selectedInvoice.transferHash && (
+              <div className="border-t pt-6 mb-6">
+                <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Transaction Information</h4>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-500">Payment Transaction Hash</p>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <p className="text-sm font-medium text-gray-900 font-mono truncate flex-1">
+                        {selectedInvoice.transferHash}
+                      </p>
+                      <a
+                        href={`https://kairos.kaiascan.io/tx/${selectedInvoice.transferHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center text-xs px-2 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded transition-colors"
+                      >
+                        <ExternalLink className="w-3 h-3 mr-1" />
+                        Explorer
+                      </a>
+                      {selectedInvoice.status === 'PAID' && !selectedInvoice.refundTransferHash && (
+                        <button
+                          onClick={async () => {
+                            if (!selectedInvoice.customerWallet) {
+                              alert('Cannot refund: Customer wallet address not found');
+                              return;
+                            }
+
+                            if (window.confirm('Are you sure you want to refund this payment? This will send funds back to the customer\'s wallet.')) {
+                              setIsProcessingRefund(true);
+                              
+                              try {
+                                // Calculate refund amount in token units (assuming 18 decimals for KRW token)
+                                const refundAmount = parseUnits(selectedInvoice.totalAmount.toString(), 18);
+                                
+                                // Check merchant has sufficient balance
+                                if (krwBalance && krwBalance.value < refundAmount) {
+                                  alert('Insufficient KRW balance to process refund');
+                                  setIsProcessingRefund(false);
+                                  return;
+                                }
+                                
+                                // Determine which token to refund (KRW or native KAIA)
+                                const isKRWPayment = selectedInvoice.currency === 'KRW' || 
+                                                     selectedInvoice.tokenAddress === KRW_TOKEN_ADDRESS;
+                                
+                                if (isKRWPayment) {
+                                  // Refund KRW tokens
+                                  await writeRefund({
+                                    address: KRW_TOKEN_ADDRESS,
+                                    abi: erc20Abi,
+                                    functionName: 'transfer',
+                                    args: [selectedInvoice.customerWallet as `0x${string}`, refundAmount],
+                                  });
+                                } else {
+                                  // For native KAIA refunds (future implementation)
+                                  alert('Native KAIA refunds not yet implemented');
+                                  setIsProcessingRefund(false);
+                                }
+                              } catch (error) {
+                                console.error('Refund error:', error);
+                                alert('Failed to initiate refund transaction');
+                                setIsProcessingRefund(false);
+                              }
+                            }
+                          }}
+                          disabled={isProcessingRefund || isRefunding || isRefundConfirming}
+                          className={`inline-flex items-center text-xs px-2 py-1 rounded transition-colors ${
+                            isProcessingRefund || isRefunding || isRefundConfirming
+                              ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                              : 'bg-red-100 text-red-700 hover:bg-red-200'
+                          }`}
+                        >
+                          {isProcessingRefund || isRefunding || isRefundConfirming ? 'Processing...' : 'Refund'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {selectedInvoice.refundTransferHash && (
+                    <div>
+                      <p className="text-xs text-gray-500">Refund Transaction Hash</p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <p className="text-sm font-medium text-gray-900 font-mono truncate flex-1">
+                          {selectedInvoice.refundTransferHash}
+                        </p>
+                        <a
+                          href={`https://kairos.kaiascan.io/tx/${selectedInvoice.refundTransferHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center text-xs px-2 py-1 bg-purple-100 text-purple-700 hover:bg-purple-200 rounded transition-colors"
+                        >
+                          <ExternalLink className="w-3 h-3 mr-1" />
+                          Explorer
+                        </a>
+                      </div>
+                      {selectedInvoice.refundedAt && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Refunded on {new Date(selectedInvoice.refundedAt).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {selectedInvoice.blockNumber && (
+                    <div>
+                      <p className="text-xs text-gray-500">Block Number</p>
+                      <p className="text-sm font-medium text-gray-900">{selectedInvoice.blockNumber}</p>
+                    </div>
+                  )}
+                  {selectedInvoice.gasUsed && (
+                    <div>
+                      <p className="text-xs text-gray-500">Gas Used</p>
+                      <p className="text-sm font-medium text-gray-900">{selectedInvoice.gasUsed}</p>
+                    </div>
+                  )}
+                  {selectedInvoice.tokenAddress && (
+                    <div>
+                      <p className="text-xs text-gray-500">Token Contract</p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <p className="text-sm font-medium text-gray-900 font-mono truncate flex-1">
+                          {selectedInvoice.tokenAddress}
+                        </p>
+                        <a
+                          href={`https://kairos.kaiascan.io/address/${selectedInvoice.tokenAddress}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center text-xs px-2 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded transition-colors"
+                        >
+                          <ExternalLink className="w-3 h-3 mr-1" />
+                          View
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Payment Link Section */}
+            <div className="border-t pt-6 mb-6">
+              <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Payment Link</h4>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={`${window.location.origin}/pay?orderId=${selectedInvoice.id}`}
+                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded bg-gray-50"
+                />
+                <button
+                  onClick={() => copyPaymentLink(selectedInvoice.id)}
+                  className={`px-3 py-2 rounded transition-colors ${
+                    copiedId === selectedInvoice.id
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                  }`}
+                >
+                  {copiedId === selectedInvoice.id ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="border-t pt-6">
+              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                <Link
+                  href={`/pay?orderId=${selectedInvoice.id}`}
+                  target="_blank"
+                  className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  View Payment Page
+                </Link>
+                <button
+                  onClick={() => {
+                    copyPaymentLink(selectedInvoice.id);
+                  }}
+                  className={`flex-1 inline-flex items-center justify-center px-4 py-2 rounded-lg font-semibold transition-colors ${
+                    copiedId === selectedInvoice.id
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  {copiedId === selectedInvoice.id ? 'Link Copied!' : 'Copy Payment Link'}
+                </button>
+                {selectedInvoice.status === 'PENDING' && (
+                  <button
+                    onClick={() => {
+                      // Placeholder for cancel invoice functionality
+                      alert('Cancel invoice functionality to be implemented');
+                    }}
+                    className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-red-100 text-red-700 rounded-lg font-semibold hover:bg-red-200 transition-colors"
+                  >
+                    Cancel Invoice
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -39,6 +39,8 @@ model Order {
   toAddress         String?
   tokenAddress      String?
   transferHash      String?
+  refundTransferHash String?    // Transaction hash for refund
+  refundedAt        DateTime?   // Date when refund was processed
   type              OrderType   @default(DIRECT)
   orderConfirmation String?
   adminGraphqlApiId String?
@@ -53,6 +55,7 @@ enum OrderStatus {
   PAID
   FAILED
   CANCELLED
+  REFUNDED
 }
 
 enum OrderType {
