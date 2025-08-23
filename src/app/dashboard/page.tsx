@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { Plus, Copy, ExternalLink, Package, Clock, CheckCircle, Wallet, FileText, ShoppingBag, Store, BookOpen, Filter, AlertCircle, Home, RefreshCw } from 'lucide-react';
+import { Plus, Copy, ExternalLink, Package, Clock, CheckCircle, Wallet, FileText, ShoppingBag, Store, BookOpen, Filter, AlertCircle, Home } from 'lucide-react';
 import Link from 'next/link';
 
 interface Invoice {
@@ -40,7 +40,6 @@ export default function MerchantDashboard() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [integrationHealth, setIntegrationHealth] = useState<{
     shopify: IntegrationHealth;
     woocommerce: IntegrationHealth;
@@ -98,23 +97,6 @@ export default function MerchantDashboard() {
       }
     } catch (error) {
       console.error('Error fetching integration health:', error);
-    }
-  };
-
-  const refreshInvoices = async () => {
-    if (!address) return;
-    
-    setRefreshing(true);
-    try {
-      const invoicesRes = await fetch(`/api/merchants/invoices?wallet=${address.toLowerCase()}`);
-      if (invoicesRes.ok) {
-        const invoicesData = await invoicesRes.json();
-        setInvoices(invoicesData);
-      }
-    } catch (error) {
-      console.error('Error refreshing invoices:', error);
-    } finally {
-      setRefreshing(false);
     }
   };
 
@@ -420,16 +402,13 @@ export default function MerchantDashboard() {
                       <span>WooCommerce API</span>
                       <ExternalLink className="w-3 h-3 ml-auto" />
                     </a>
-                    <a
-                      href="https://kaia-commerce.myshopify.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <Link
+                      href="/pay"
                       className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                     >
-                      <Store className="w-4 h-4" />
-                      <span>Shopify Store Demo</span>
-                      <ExternalLink className="w-3 h-3 ml-auto" />
-                    </a>
+                      <FileText className="w-4 h-4" />
+                      <span>Payment Demo</span>
+                    </Link>
                   </nav>
                 </div>
 
@@ -597,38 +576,23 @@ export default function MerchantDashboard() {
                  activeFilter === 'pending' ? 'Pending Invoices' :
                  activeFilter === 'paid' ? 'Paid Invoices' : 'Invoices'}
               </h2>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={refreshInvoices}
-                  disabled={refreshing}
-                  className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg font-semibold transition-colors ${
-                    refreshing
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                  title="Refresh invoice list"
-                >
-                  <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-                  <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
-                </button>
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  disabled={activeFilter === 'shopify' || activeFilter === 'woocommerce'}
-                  className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg font-semibold transition-colors ${
-                    activeFilter === 'shopify' || activeFilter === 'woocommerce'
-                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                  title={
-                    activeFilter === 'shopify' || activeFilter === 'woocommerce'
-                      ? 'Invoices for this platform are created automatically via webhooks'
-                      : 'Create a new invoice'
-                  }
-                >
-                  <Plus className="w-5 h-5" />
-                  <span>Create Direct Invoice</span>
-                </button>
-              </div>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                disabled={activeFilter === 'shopify' || activeFilter === 'woocommerce'}
+                className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg font-semibold transition-colors ${
+                  activeFilter === 'shopify' || activeFilter === 'woocommerce'
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+                title={
+                  activeFilter === 'shopify' || activeFilter === 'woocommerce'
+                    ? 'Invoices for this platform are created automatically via webhooks'
+                    : 'Create a new invoice'
+                }
+              >
+                <Plus className="w-5 h-5" />
+                <span>Create Direct Invoice</span>
+              </button>
             </div>
 
             {/* Invoices Table */}
