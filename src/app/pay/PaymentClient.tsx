@@ -35,6 +35,8 @@ interface PaymentData {
   transferHash?: string | null;
   customerWallet?: string | null;
   merchantWallet?: string | null;
+  type?: 'SHOPIFY' | 'WOOCOMMERCE' | 'DIRECT';
+  storeName?: string;
 }
 
 type PaymentStep = 'selection' | 'confirmation' | 'processing' | 'success';
@@ -992,13 +994,20 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
 
                 <button
                   onClick={() => {
-                    setPaymentStep('selection');
-                    setTxStatus('idle');
+                    if (paymentData.type === 'WOOCOMMERCE' && paymentData.description && paymentData.orderId) {
+                      // Redirect to WooCommerce order received page
+                      window.location.href = `http://kaia-commerce2.local/checkout/order-received/${paymentData.description}/?key=${paymentData.orderId}`;
+                    } else {
+                      setPaymentStep('selection');
+                      setTxStatus('idle');
+                    }
                   }}
                   className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-semibold transition-colors"
                   style={{ color: 'white !important' }}
                 >
-                  Make Another Payment
+                  {paymentData.type === 'WOOCOMMERCE' 
+                    ? `Return to ${paymentData.storeName || paymentData.merchant}` 
+                    : 'Make Another Payment'}
                 </button>
               </div>
             </>

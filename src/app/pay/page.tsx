@@ -39,6 +39,8 @@ async function fetchPaymentData(params: Awaited<PaymentPageProps['searchParams']
         transferHash: order.transferHash,
         customerWallet: order.customerWallet,
         merchantWallet: order.merchantWallet,
+        type: order.type as 'SHOPIFY' | 'WOOCOMMERCE' | 'DIRECT',
+        storeName: order.merchantName, // Use original merchant name without suffix
       };
     }
   }

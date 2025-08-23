@@ -1,6 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// Function to notify WooCommerce that payment is confirmed
+async function notifyWooCommercePayment(orderKey: string, transactionId: string) {
+  console.log(orderKey, transactionId)
+  try {
+    const response = await fetch('http://kaia-commerce2.local/wp-admin/admin-ajax.php?action=krw_payment_confirm', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        order_key: orderKey,
+        transaction_id: transactionId
+      })
+    });
+
+    const result = await response.json();
+    console.log('WooCommerce payment notification result:', result);
+    return true;
+  } catch (error) {
+    console.error('Failed to notify WooCommerce:', error);
+    return false;
+  }
+}
+
 // Function to mark Shopify order as paid
 async function markShopifyOrderAsPaid(adminGraphqlApiId: string, shopDomain?: string) {
   const shopifyAccessToken = process.env.SHOPIFY_API_ACCESS_TOKEN;
@@ -119,6 +143,16 @@ export async function POST(request: NextRequest) {
       
       if (!shopifySuccess) {
         console.warn('Failed to mark Shopify order as paid, but continuing with local update');
+      }
+    }
+
+    // If this is a WooCommerce order being marked as paid, notify WooCommerce
+    if (status === 'PAID' && order.type === 'WOOCOMMERCE' && transferHash) {
+      console.log('Notifying WooCommerce of payment confirmation:', order.id);
+      const wooCommerceSuccess = await notifyWooCommercePayment(order.id, transferHash);
+      
+      if (!wooCommerceSuccess) {
+        console.warn('Failed to notify WooCommerce of payment, but continuing with local update');
       }
     }
 

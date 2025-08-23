@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
         status: 'PENDING',
         totalAmount: parseFloat(extractedData.total_price),
         currency: extractedData.currency_code,
-        merchantName: extractedData.store_name,
+        merchantName: extractedData.store_name || merchant.name,
         merchantWallet: merchant.walletAddress,
         productName: extractedData.product_name,
         orderConfirmation: String(extractedData.basic_id),
