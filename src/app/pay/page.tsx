@@ -21,8 +21,19 @@ async function fetchPaymentData(params: Awaited<PaymentPageProps['searchParams']
       where: { id: params.orderId }
     });
 
-    // If order exists, return it
+    // If order exists, check if it's expired first
     if (order) {
+      // Check if direct invoice has expired
+      if (order.type === 'DIRECT' && order.expiresAt && new Date() > order.expiresAt && order.status === 'PENDING') {
+        // Mark as expired in database
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { status: 'EXPIRED' }
+        });
+        // Update local order object
+        order.status = 'EXPIRED';
+      }
+
       // Add (Shopify) suffix if it's a Shopify order
       const merchantDisplay = order.type === 'SHOPIFY' 
         ? `${order.merchantName} (Shopify)`
@@ -41,6 +52,7 @@ async function fetchPaymentData(params: Awaited<PaymentPageProps['searchParams']
         merchantWallet: order.merchantWallet,
         type: order.type as 'SHOPIFY' | 'WOOCOMMERCE' | 'DIRECT',
         storeName: order.merchantName, // Use original merchant name without suffix
+        expiresAt: order.expiresAt?.toISOString(),
       };
     }
   }

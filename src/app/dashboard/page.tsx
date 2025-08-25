@@ -29,6 +29,7 @@ interface Invoice {
   gasUsed?: string;
   paidAt?: string;
   merchantWallet?: string;
+  expiresAt?: string;
 }
 
 interface Merchant {
@@ -66,9 +67,7 @@ export default function MerchantDashboard() {
   const { 
     data: refundTxHash,
     writeContract: writeRefund,
-    isPending: isRefunding,
-    isError: isRefundError,
-    error: refundError
+    isPending: isRefunding
   } = useWriteContract();
 
   // Wait for refund transaction confirmation
@@ -231,7 +230,8 @@ export default function MerchantDashboard() {
           ...formData,
           totalAmount: parseFloat(formData.totalAmount),
           merchantWallet: address.toLowerCase(),
-          type: formData.type
+          type: formData.type,
+          expiresInHours: parseInt(formData.expiresInHours)
         })
       });
 
@@ -244,9 +244,15 @@ export default function MerchantDashboard() {
         setCreatedInvoice(newInvoice); // Store the created invoice to show link
         // Don't close modal immediately, let user see the link
       } else {
-        const errorData = await res.json();
-        console.error('Error response:', errorData);
-        alert(`Error: ${errorData.error}`);
+        const errorText = await res.text();
+        console.error('Error response status:', res.status);
+        console.error('Error response text:', errorText);
+        try {
+          const errorData = JSON.parse(errorText);
+          alert(`Error: ${errorData.error || 'Unknown error'}`);
+        } catch (jsonError) {
+          alert(`Error: ${res.status} - ${errorText}`);
+        }
       }
     } catch (error) {
       console.error('Error creating invoice:', error);
@@ -313,6 +319,8 @@ export default function MerchantDashboard() {
         return 'text-red-600 bg-red-100';
       case 'REFUNDED':
         return 'text-purple-600 bg-purple-100';
+      case 'EXPIRED':
+        return 'text-orange-600 bg-orange-100';
       default:
         return 'text-gray-600 bg-gray-100';
     }
@@ -327,6 +335,8 @@ export default function MerchantDashboard() {
       case 'REFUNDED':
         return <RefreshCw className="w-4 h-4" />;
       case 'FAILED':
+        return <AlertCircle className="w-4 h-4" />;
+      case 'EXPIRED':
         return <AlertCircle className="w-4 h-4" />;
       default:
         return <Package className="w-4 h-4" />;
@@ -768,9 +778,7 @@ export default function MerchantDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredInvoices.map((invoice) => {
-                    console.log('Invoice status:', invoice.id, invoice.status);
-                    return (
+                  {filteredInvoices.map((invoice) => (
                     <tr 
                       key={invoice.id} 
                       className="hover:bg-gray-50 cursor-pointer"
@@ -828,7 +836,7 @@ export default function MerchantDashboard() {
                         </div>
                       </td>
                     </tr>
-                  )})}
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -1131,6 +1139,21 @@ export default function MerchantDashboard() {
                       </p>
                     </div>
                   )}
+                  {selectedInvoice.expiresAt && selectedInvoice.type === 'DIRECT' && (
+                    <div>
+                      <p className="text-xs text-gray-500">
+                        {new Date(selectedInvoice.expiresAt) > new Date() ? 'Expires' : 'Expired'}
+                      </p>
+                      <p className={`text-sm font-medium ${
+                        new Date(selectedInvoice.expiresAt) > new Date() 
+                          ? 'text-gray-900' 
+                          : 'text-red-600'
+                      }`}>
+                        {new Date(selectedInvoice.expiresAt).toLocaleString()}
+                        {new Date(selectedInvoice.expiresAt) < new Date() && ' ⚠️'}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1183,7 +1206,7 @@ export default function MerchantDashboard() {
                                 
                                 if (isKRWPayment) {
                                   // Refund KRW tokens
-                                  await writeRefund({
+                                  writeRefund({
                                     address: KRW_TOKEN_ADDRESS,
                                     abi: erc20Abi,
                                     functionName: 'transfer',

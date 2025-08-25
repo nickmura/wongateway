@@ -37,6 +37,7 @@ interface PaymentData {
   merchantWallet?: string | null;
   type?: 'SHOPIFY' | 'WOOCOMMERCE' | 'DIRECT';
   storeName?: string;
+  expiresAt?: string;
 }
 
 type PaymentStep = 'selection' | 'confirmation' | 'processing' | 'success';
@@ -220,8 +221,10 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
 
   const t = content[language];
   
-  // Check if order is already paid
+  // Check if order is already paid or expired
   const isOrderPaid = paymentData.status === 'PAID' && paymentData.transferHash;
+  const isOrderExpired = paymentData.status === 'EXPIRED' || 
+    (paymentData.expiresAt && new Date() > new Date(paymentData.expiresAt) && paymentData.status === 'PENDING');
   
   const [paymentStep, setPaymentStep] = useState<PaymentStep>(
     isOrderPaid ? 'success' : 'selection'

@@ -30,6 +30,7 @@ model Order {
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
   paidAt            DateTime?
+  expiresAt         DateTime?   // When the invoice expires (for DIRECT invoices)
   approveHash       String?
   blockNumber       Int?
   fromAddress       String?
@@ -56,6 +57,7 @@ enum OrderStatus {
   FAILED
   CANCELLED
   REFUNDED
+  EXPIRED
 }
 
 enum OrderType {

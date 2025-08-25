@@ -41,7 +41,8 @@ export async function POST(request: NextRequest) {
       currency = 'KRW',
       customerEmail,
       description,
-      merchantWallet
+      merchantWallet,
+      expiresInHours = 24  // Default to 24 hours if not specified
     } = body;
 
     if (!productName || !totalAmount || !merchantWallet) {
@@ -59,6 +60,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Merchant not found. Please refresh the dashboard.' }, { status: 404 });
     }
 
+    // Calculate expiration date for direct invoices
+    let expiresAt = null;
+    if (expiresInHours && expiresInHours > 0) {
+      expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + parseInt(expiresInHours.toString()));
+    }
+    
     // Create the invoice/order
     const invoice = await prisma.order.create({
       data: {
@@ -71,6 +79,7 @@ export async function POST(request: NextRequest) {
         currency,
         customerEmail: customerEmail || null,
         orderConfirmation: description || null,
+        expiresAt: expiresAt  // Set expiration for direct invoices
       }
     });
 

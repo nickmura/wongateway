@@ -12,7 +12,9 @@ async function checkOrders() {
         refundedAt: true,
         productName: true,
         totalAmount: true,
-        merchantWallet: true
+        merchantWallet: true,
+        expiresAt: true,
+        type: true
       },
       orderBy: {
         createdAt: 'desc'
