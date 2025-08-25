@@ -267,18 +267,18 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
   // Calculate token amount when balance is available
   useEffect(() => {
     if (krwBalance) {
-      const total = paymentData.amount + networkFee;
+      // Only transfer the exact invoice amount in tokens (network fee is paid in native KAIA)
       const tokenDecimals = krwBalance.decimals || 18;
-      const calculatedAmount = parseUnits(total.toString(), tokenDecimals);
+      const calculatedAmount = parseUnits(paymentData.amount.toString(), tokenDecimals);
       setTokenAmount(calculatedAmount);
       console.log('Token amount calculated:', {
-        total,
+        amount: paymentData.amount,
         decimals: tokenDecimals,
         tokenAmount: calculatedAmount.toString(),
         currentAllowance: currentAllowance?.toString(),
       });
     }
-  }, [krwBalance, paymentData.amount, networkFee, currentAllowance]);
+  }, [krwBalance, paymentData.amount, currentAllowance]);
 
   // Simulate approve transaction
   const { data: approveConfig } = useSimulateContract({
@@ -357,11 +357,10 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
   ];
 
   const selectedPaymentMethod = paymentMethods.find(m => m.id === selectedMethod);
-  const total = paymentData.amount + networkFee;
   
-  // Check if user has sufficient balance
+  // Check if user has sufficient balance (only for token amount, not network fee)
   const hasInsufficientBalance = krwBalance ? 
-    Number(formatUnits(krwBalance.value, krwBalance.decimals)) < total : 
+    Number(formatUnits(krwBalance.value, krwBalance.decimals)) < paymentData.amount : 
     false;
 
   // Handle initial payment button click
@@ -641,13 +640,13 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
                         <span className="text-gray-600">Network fee</span>
                         <Info className="w-4 h-4 text-gray-400 cursor-help" />
                       </div>
-                      <span className="font-semibold text-black">{networkFee.toFixed(2)} {paymentData.currency}</span>
+                      <span className="font-semibold text-black">{networkFee.toFixed(2)} KAIA</span>
                     </div>
                     
                     <div className="flex items-center justify-between text-lg font-bold">
                       <span className="text-black">Total</span>
                       <span className="text-black">
-                        {total.toFixed(2)} {selectedPaymentMethod?.currency}
+                        {paymentData.amount.toFixed(2)} {selectedPaymentMethod?.currency}
                       </span>
                     </div>
                   </div>
@@ -747,11 +746,11 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Network Fee</span>
-                      <span className="font-medium text-black">{networkFee.toFixed(2)} {paymentData.currency}</span>
+                      <span className="font-medium text-black">{networkFee.toFixed(2)} KAIA</span>
                     </div>
                     <div className="flex justify-between pt-2 border-t border-gray-200">
                       <span className="font-semibold text-black">Total</span>
-                      <span className="font-semibold text-black">{total.toFixed(2)} {paymentData.currency}</span>
+                      <span className="font-semibold text-black">{paymentData.amount.toFixed(2)} {paymentData.currency}</span>
                     </div>
                     {hasInsufficientBalance && (
                       <div className="mt-3 p-3 bg-red-100 rounded-lg">
@@ -759,7 +758,7 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
                           ⚠️ Insufficient balance
                         </p>
                         <p className="text-red-600 text-xs mt-1">
-                          Required: {total.toFixed(2)} {paymentData.currency} | 
+                          Required: {paymentData.amount.toFixed(2)} {paymentData.currency} | 
                           Available: {krwAvailableFormatted} {paymentData.currency}
                         </p>
                       </div>
@@ -967,7 +966,7 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
                     )}
                     <div className="flex justify-between">
                       <span className="text-green-700">Amount Paid</span>
-                      <span className="font-medium text-green-900">{total.toFixed(2)} {paymentData.currency}</span>
+                      <span className="font-medium text-green-900">{paymentData.amount.toFixed(2)} {paymentData.currency}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-green-700">Merchant</span>
