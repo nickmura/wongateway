@@ -12,6 +12,7 @@ model Merchant {
   walletAddress String   @unique
   name          String   @default("Unnamed Merchant")
   email         String?
+  apiKey        String   @unique @db.Char(16)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   

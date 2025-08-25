@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
     const data = JSON.parse(body);
-
+    console.log(data)
     // Get the single merchant from database (there should only be one)
     const merchant = await prisma.merchant.findFirst();
     
@@ -34,7 +34,8 @@ export async function POST(request: NextRequest) {
       total_price: data.total,
       currency_code: data.currency_code,
       product_name: data.product_name,
-      merchant_wallet: merchant.walletAddress
+      merchant_wallet: merchant.walletAddress,
+      api_key: data.api_key
     };
 
     console.log('WooCommerce webhook - extracted data:', extractedData);

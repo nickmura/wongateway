@@ -37,6 +37,7 @@ interface Merchant {
   walletAddress: string;
   name: string;
   email?: string;
+  apiKey: string;
 }
 
 interface IntegrationHealth {
@@ -58,6 +59,7 @@ export default function MerchantDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isProcessingRefund, setIsProcessingRefund] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
   const [integrationHealth, setIntegrationHealth] = useState<{
     shopify: IntegrationHealth;
     woocommerce: IntegrationHealth;
@@ -119,6 +121,7 @@ export default function MerchantDashboard() {
       
       if (merchantRes.ok) {
         const merchantData = await merchantRes.json();
+        console.log('Frontend received merchant data:', merchantData);
         setMerchant(merchantData);
         
         // Fetch merchant's invoices (use lowercase)
@@ -643,6 +646,49 @@ export default function MerchantDashboard() {
                           )}
                         </div>
                       </div>
+                      {/* API Key Configuration Section */}
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-2">Plugin Configuration</h4>
+                        <div className="space-y-2">
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">API Key (for WooCommerce plugin):</p>
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type={showApiKey ? "text" : "password"}
+                                readOnly
+                                value={merchant?.apiKey || 'Loading...'}
+                                className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded bg-gray-50 font-mono"
+                              />
+                              <button
+                                onClick={() => setShowApiKey(!showApiKey)}
+                                className="text-xs px-2 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded transition-colors"
+                              >
+                                {showApiKey ? 'Hide' : 'Show'}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (merchant?.apiKey) {
+                                    navigator.clipboard.writeText(merchant.apiKey);
+                                    setCopiedId('apikey');
+                                    setTimeout(() => setCopiedId(null), 2000);
+                                  }
+                                }}
+                                className={`text-xs px-2 py-1 rounded transition-colors ${
+                                  copiedId === 'apikey'
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                }`}
+                              >
+                                {copiedId === 'apikey' ? 'Copied!' : 'Copy'}
+                              </button>
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            Use this API key in your WooCommerce plugin configuration to connect your store.
+                          </p>
+                        </div>
+                      </div>
+                      
                       {!integrationHealth?.woocommerce?.connected && (
                         <div className="mt-2 text-xs text-gray-500">
                           <p>To connect your WooCommerce store, please follow the example repository</p>
