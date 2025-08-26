@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { parseUnits, erc20Abi } from 'viem';
 
 // Token addresses
-const KRW_TOKEN_ADDRESS = '0x865d6a906c2f5506729c7d0bc0f6Dc6a3Cbf433c' as `0x${string}`;
+const KRW_TOKEN_ADDRESS = '0xb813E193ddE7ba598089C398F677EDfEBb77a5Aa' as `0x${string}`;
 
 interface Invoice {
   id: string;

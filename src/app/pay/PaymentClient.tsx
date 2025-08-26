@@ -43,7 +43,7 @@ interface PaymentData {
 type PaymentStep = 'selection' | 'confirmation' | 'processing' | 'success';
 type TransactionStatus = 'idle' | 'approving' | 'approved' | 'transferring' | 'completed' | 'error';
 
-const KRW_TOKEN_ADDRESS = '0x865d6a906c2f5506729c7d0bc0f6Dc6a3Cbf433c' as `0x${string}`;
+const KRW_TOKEN_ADDRESS = '0xb813E193ddE7ba598089C398F677EDfEBb77a5Aa' as `0x${string}`;
 const DEFAULT_MERCHANT_ADDRESS = '0x742d35cc6634c0532925a3b844bc9e7595f0beb7' as `0x${string}`;
 
 interface PaymentClientProps {

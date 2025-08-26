@@ -9,7 +9,7 @@ export default function Home() {
 
   const content = {
     en: {
-      nav: { demo: 'Demo', dashboard: 'Dashboard', github: 'GitHub' },
+      nav: { demo: 'Demo', dashboard: 'Dashboard', faucet: 'Faucet', github: 'GitHub' },
       hero: {
         badge: 'Proof of Concept',
         title1: 'Accept KRW Stablecoin',
@@ -70,7 +70,7 @@ export default function Home() {
       }
     },
     ko: {
-      nav: { demo: '데모', dashboard: '대시보드', github: '깃허브' },
+      nav: { demo: '데모', dashboard: '대시보드', faucet: '수도꼭지', github: '깃허브' },
       hero: {
         badge: '개념 증명',
         title1: 'KRW 스테이블코인',
@@ -152,6 +152,9 @@ export default function Home() {
             </Link>
             <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors">
               {t.nav.dashboard}
+            </Link>
+            <Link href="/faucet" className="text-gray-600 hover:text-gray-900 transition-colors">
+              {t.nav.faucet}
             </Link>
             <a href="https://github.com/nickmura/kaia-commerce" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900 transition-colors">
               {t.nav.github}
