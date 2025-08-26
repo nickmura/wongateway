@@ -34,6 +34,16 @@ async function fetchPaymentData(params: Awaited<PaymentPageProps['searchParams']
         order.status = 'EXPIRED';
       }
 
+      // If it's a WooCommerce order, fetch the merchant's site URL
+      let wooCommerceSiteURL: string | undefined;
+      if (order.type === 'WOOCOMMERCE' && order.merchantWallet) {
+        const merchant = await prisma.merchant.findUnique({
+          where: { walletAddress: order.merchantWallet },
+          select: { wooCommerceSiteURL: true }
+        });
+        wooCommerceSiteURL = merchant?.wooCommerceSiteURL || undefined;
+      }
+
       // Add (Shopify) suffix if it's a Shopify order
       const merchantDisplay = order.type === 'SHOPIFY' 
         ? `${order.merchantName} (Shopify)`
@@ -53,6 +63,7 @@ async function fetchPaymentData(params: Awaited<PaymentPageProps['searchParams']
         type: order.type as 'SHOPIFY' | 'WOOCOMMERCE' | 'DIRECT',
         storeName: order.merchantName, // Use original merchant name without suffix
         expiresAt: order.expiresAt?.toISOString(),
+        wooCommerceSiteURL,
       };
     }
   }

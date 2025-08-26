@@ -64,7 +64,7 @@ export default function Home() {
         viewExplorer: 'View on Kaiascan'
       },
       footer: {
-        tagline: 'Kaia Commerce - A proof of concept for blockchain payments in e-commerce',
+        tagline: 'WonWay - A proof of concept for blockchain payments in e-commerce',
         built: 'Built with ❤️ for the Kaia ecosystem',
         opensource: 'Open Source'
       }
@@ -125,7 +125,7 @@ export default function Home() {
         viewExplorer: 'Kaiascan에서 보기'
       },
       footer: {
-        tagline: 'Kaia Commerce - 전자상거래 블록체인 결제 개념 증명',
+        tagline: 'WonWay - 전자상거래 블록체인 결제 개념 증명',
         built: 'Kaia 생태계를 위해 ❤️로 제작',
         opensource: '오픈 소스'
       }
@@ -141,9 +141,9 @@ export default function Home() {
         <nav className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">K</span>
+              <span className="text-white font-bold text-xl">W</span>
             </div>
-            <span className="text-xl font-bold text-gray-900">Kaia Commerce</span>
+            <span className="text-xl font-bold text-gray-900">WonWay</span>
             <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-semibold">BETA</span>
           </div>
           <div className="flex items-center space-x-6">
@@ -156,7 +156,7 @@ export default function Home() {
             <Link href="/faucet" className="text-gray-600 hover:text-gray-900 transition-colors">
               {t.nav.faucet}
             </Link>
-            <a href="https://github.com/nickmura/kaia-commerce" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900 transition-colors">
+            <a href="https://github.com/nickmura/wonway" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900 transition-colors">
               {t.nav.github}
             </a>
             <button

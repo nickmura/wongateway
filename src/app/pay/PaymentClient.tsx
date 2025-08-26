@@ -38,6 +38,7 @@ interface PaymentData {
   type?: 'SHOPIFY' | 'WOOCOMMERCE' | 'DIRECT';
   storeName?: string;
   expiresAt?: string;
+  wooCommerceSiteURL?: string;
 }
 
 type PaymentStep = 'selection' | 'confirmation' | 'processing' | 'success';
@@ -997,8 +998,9 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
                 <button
                   onClick={() => {
                     if (paymentData.type === 'WOOCOMMERCE' && paymentData.description && paymentData.orderId) {
-                      // Redirect to WooCommerce order received page
-                      window.location.href = `http://kaia-commerce2.local/checkout/order-received/${paymentData.description}/?key=${paymentData.orderId}`;
+                      // Redirect to WooCommerce order received page using the merchant's site URL
+                      const siteUrl = paymentData.wooCommerceSiteURL || 'http://kaia-commerce2.local';
+                      window.location.href = `${siteUrl}/checkout/order-received/${paymentData.description}/?key=${paymentData.orderId}`;
                     } else {
                       setPaymentStep('selection');
                       setTxStatus('idle');

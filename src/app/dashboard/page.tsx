@@ -607,16 +607,29 @@ export default function MerchantDashboard() {
                         </div>
                       ) : null}
                       {!integrationHealth?.shopify?.connected && (
-                        <div className="mt-2 text-xs text-gray-500">
-                          <p>To connect your Shopify store, please follow the example repository</p>
-                          <a 
-                            href="https://github.com/nickmura/kaia-commerce" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-700 underline"
-                          >
-                            View Setup Guide →
-                          </a>
+                        <div className="mt-2">
+                          <div className="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                            <p className="font-semibold text-yellow-800 mb-1">⚠️ Important: Self-Hosted Integration Only</p>
+                            <p className="text-yellow-700">
+                              This Shopify integration requires self-hosting. You cannot connect your store directly through WonWay.
+                            </p>
+                            <p className="text-yellow-700 mt-1">
+                              To integrate your own Shopify store:
+                            </p>
+                            <ol className="list-decimal list-inside text-yellow-700 ml-2 mt-1">
+                              <li>Fork this repository</li>
+                              <li>Deploy your own instance</li>
+                              <li>Configure with your Shopify credentials</li>
+                            </ol>
+                            <a 
+                              href="https://github.com/nickmura/wonway" 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-block mt-2 text-yellow-800 hover:text-yellow-900 underline font-medium"
+                            >
+                              View Repository & Setup Guide →
+                            </a>
+                          </div>
                         </div>
                       )}
                     </div>
