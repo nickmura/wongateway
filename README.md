@@ -1,6 +1,6 @@
 # Kaia Commerce
 
-A Web3 payment gateway for Kaia blockchain enabling KRW stablecoin payments on Shopify and direct invoices.
+A Web3 payment gateway for Kaia blockchain enabling KRW stablecoin payments on Shopify & WooCommerce and direct invoices.
 
 ## Features
 

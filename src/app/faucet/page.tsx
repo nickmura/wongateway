@@ -64,15 +64,14 @@ export default function FaucetPage() {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center space-x-3">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center space-x-3">
             <Droplets className="w-8 h-8 text-blue-600" />
             <div>
               <h1 className="text-3xl font-bold text-gray-900">KRW Token Faucet</h1>
               <p className="text-sm text-gray-600">Kairos Testnet</p>
             </div>
           </div>
-          <ConnectButton />
         </div>
 
         {/* Main Content */}
@@ -83,7 +82,9 @@ export default function FaucetPage() {
                 <Wallet className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h2 className="text-2xl font-semibold text-gray-900 mb-2">Connect Your Wallet</h2>
                 <p className="text-gray-600 mb-6">Please connect your wallet to request test tokens</p>
-                <ConnectButton />
+                <div className="flex justify-center">
+                  <ConnectButton />
+                </div>
               </div>
             ) : (
               <div className="space-y-6">
@@ -227,6 +228,7 @@ export default function FaucetPage() {
               <li>4. Click "Mint Tokens" and approve the transaction</li>
               <li>5. Wait for confirmation and your tokens will be available</li>
               <li>6. Add the token contract address {KRW_TOKEN_ADDRESS} to your wallet</li>
+              <li>7. Purchase a test item on our <a href="https://woocommerce.wonway.xyz" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:text-purple-700 underline">WooCommerce</a> or <a href="https://kaia-commerce.myshopify.com" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700 underline">Shopify</a> demo stores and utilize our payment gateway!</li>
             </ol>
             <p className="mt-4 text-xs text-gray-600">
               Note: These are test tokens on the Kairos testnet for development purposes only and have no real value.

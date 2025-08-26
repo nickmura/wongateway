@@ -518,23 +518,13 @@ export default function MerchantDashboard() {
                   </h3>
                   <nav className="space-y-2">
                     <a
-                      href="https://help.shopify.com/en/manual/orders/notifications/webhooks"
+                      href="https://woocommerce.wonway.xyz"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                     >
-                      <BookOpen className="w-4 h-4" />
-                      <span>Shopify Webhooks</span>
-                      <ExternalLink className="w-3 h-3 ml-auto" />
-                    </a>
-                    <a
-                      href="https://woocommerce.github.io/woocommerce-rest-api-docs/?shell#webhooks"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                      <BookOpen className="w-4 h-4" />
-                      <span>WooCommerce API</span>
+                      <Store className="w-4 h-4" />
+                      <span>WooCommerce Store Demo</span>
                       <ExternalLink className="w-3 h-3 ml-auto" />
                     </a>
                     <a
@@ -719,16 +709,31 @@ export default function MerchantDashboard() {
                       </div>
                       
                       {!merchant?.wooCommerceEnabled && (
-                        <div className="mt-2 text-xs text-gray-500">
-                          <p>To connect your WooCommerce store, please follow the example repository</p>
-                          <a 
-                            href="https://github.com/nickmura/kaia-commerce" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-700 underline"
-                          >
-                            View Setup Guide →
-                          </a>
+                        <div className="mt-2">
+                          <div className="p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                            <p className="font-medium text-blue-800 mb-1">📦 Easy WooCommerce Integration</p>
+                            <p className="text-blue-700">
+                              Connect your WooCommerce store directly using the API key above.
+                            </p>
+                            <div className="mt-2 space-y-1">
+                              <a 
+                                href="https://github.com/nickmura/wonway-woocommerce-plugin" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="block text-blue-600 hover:text-blue-700 underline"
+                              >
+                                📥 Download WooCommerce Plugin →
+                              </a>
+                              <a 
+                                href="https://wonway-demo.com" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="block text-purple-600 hover:text-purple-700 underline"
+                              >
+                                🛍️ View WooCommerce Demo Store →
+                              </a>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
