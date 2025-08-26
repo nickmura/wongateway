@@ -2,18 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 // Function to notify WooCommerce that payment is confirmed
-async function notifyWooCommercePayment(orderKey: string, transactionId: string) {
-  console.log(orderKey, transactionId)
+async function notifyWooCommercePayment(orderKey: string, transactionId: string, apiKey: string, siteUrl?: string) {
+  console.log(orderKey, transactionId, apiKey ? `API Key: ${apiKey.slice(0, 4)}...` : 'No API Key')
+  
+  // Use the site URL if provided, otherwise fall back to default
+  const wooCommerceUrl = siteUrl || 'http://kaia-commerce2.local';
+  
   try {
-    const response = await fetch('http://kaia-commerce2.local/wp-admin/admin-ajax.php?action=krw_payment_confirm', {
+    const response = await fetch(`${wooCommerceUrl}/wp-admin/admin-ajax.php?action=krw_payment_confirm`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-API-Key': apiKey
       },
       body: JSON.stringify({
         order_key: orderKey,
-        transaction_id: transactionId
-        
+        transaction_id: transactionId,
+        api_key: apiKey
       })
     });
 
@@ -121,10 +126,40 @@ async function markShopifyOrderAsPaid(adminGraphqlApiId: string, shopDomain?: st
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { orderId, status, transferHash, customerWallet } = body;
+    const { orderId, status, transferHash, customerWallet, apiKey } = body;
+    
+    // Check for API key in header or body (for WooCommerce)
+    const headerApiKey = request.headers.get('X-API-Key');
+    const authApiKey = headerApiKey || apiKey;
 
     if (!orderId || !status) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Fetch the order first to check its type
+    const existingOrder = await prisma.order.findUnique({
+      where: { id: orderId }
+    });
+
+    if (!existingOrder) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
+
+    // If an API key is provided, validate it (for WooCommerce plugin updates)
+    if (authApiKey) {
+      // Validate the API key belongs to a merchant
+      const merchant = await prisma.merchant.findUnique({
+        where: { apiKey: authApiKey }
+      });
+
+      if (!merchant) {
+        return NextResponse.json({ error: 'Invalid API key' }, { status: 401 });
+      }
+
+      // Verify the merchant owns this order by checking merchantWallet
+      if (existingOrder.merchantWallet && existingOrder.merchantWallet !== merchant.walletAddress) {
+        return NextResponse.json({ error: 'Unauthorized: Order does not belong to this merchant' }, { status: 403 });
+      }
     }
 
     const order = await prisma.order.update({
@@ -150,10 +185,41 @@ export async function POST(request: NextRequest) {
     // If this is a WooCommerce order being marked as paid, notify WooCommerce
     if (status === 'PAID' && order.type === 'WOOCOMMERCE' && transferHash) {
       console.log('Notifying WooCommerce of payment confirmation:', order.id);
-      const wooCommerceSuccess = await notifyWooCommercePayment(order.id, transferHash);
       
-      if (!wooCommerceSuccess) {
-        console.warn('Failed to notify WooCommerce of payment, but continuing with local update');
+      // Always fetch the merchant's actual API key and site URL from database for WooCommerce notification
+      let merchantApiKey: string | undefined;
+      let siteUrl: string | undefined;
+      
+      if (order.merchantWallet) {
+        console.log('Looking for merchant with wallet address:', order.merchantWallet);
+        const merchant = await prisma.merchant.findUnique({
+          where: { walletAddress: order.merchantWallet },
+          select: { apiKey: true, wooCommerceSiteURL: true, walletAddress: true }
+        });
+        
+        if (merchant) {
+          merchantApiKey = merchant.apiKey;
+          siteUrl = merchant.wooCommerceSiteURL || undefined;
+          console.log('Found merchant:', {
+            walletAddress: merchant.walletAddress,
+            apiKey: merchantApiKey,
+            siteUrl: siteUrl
+          });
+        } else {
+          console.warn('No merchant found with wallet address:', order.merchantWallet);
+        }
+      } else {
+        console.warn('No merchant wallet address on order');
+      }
+      
+      if (merchantApiKey) {
+        const wooCommerceSuccess = await notifyWooCommercePayment(order.id, transferHash, merchantApiKey, siteUrl);
+        
+        if (!wooCommerceSuccess) {
+          console.warn('Failed to notify WooCommerce of payment, but continuing with local update');
+        }
+      } else {
+        console.warn('No API key found for WooCommerce notification');
       }
     }
 

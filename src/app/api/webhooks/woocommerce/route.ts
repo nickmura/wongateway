@@ -16,14 +16,25 @@ export async function POST(request: NextRequest) {
     const body = await request.text();
     const data = JSON.parse(body);
     console.log(data)
-    // Get the single merchant from database (there should only be one)
-    const merchant = await prisma.merchant.findFirst();
+    // Get the merchant by API key from the webhook data
+    const apiKey = data.api_key;
+    
+    if (!apiKey) {
+      console.error('No API key provided in webhook data');
+      return NextResponse.json({ 
+        error: 'API key required' 
+      }, { status: 400 });
+    }
+    
+    const merchant = await prisma.merchant.findUnique({
+      where: { apiKey: apiKey }
+    });
     
     if (!merchant) {
-      console.error('No merchant found in database');
+      console.error('No merchant found with API key:', apiKey);
       return NextResponse.json({ 
-        error: 'No merchant configured' 
-      }, { status: 500 });
+        error: 'Invalid API key' 
+      }, { status: 401 });
     }
     // Extract required fields from WooCommerce webhook payload
     const extractedData = {

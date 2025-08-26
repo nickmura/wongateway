@@ -38,6 +38,8 @@ interface Merchant {
   name: string;
   email?: string;
   apiKey: string;
+  wooCommerceEnabled?: boolean;
+  wooCommerceSiteURL?: string;
 }
 
 interface IntegrationHealth {
@@ -626,20 +628,19 @@ export default function MerchantDashboard() {
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-3">
                           <Store className={`w-6 h-6 ${
-                            integrationHealth?.woocommerce?.connected ? 'text-purple-600' : 'text-gray-400'
+                            merchant?.wooCommerceEnabled ? 'text-purple-600' : 'text-gray-400'
                           }`} />
                           <div>
                             <h3 className="font-semibold text-gray-900">WooCommerce Integration</h3>
                             <p className={`text-sm ${
-                              integrationHealth?.woocommerce?.connected ? 'text-purple-600' : 'text-gray-500'
+                              merchant?.wooCommerceEnabled ? 'text-purple-600' : 'text-gray-500'
                             }`}>
-                              {integrationHealth?.woocommerce?.connected ? 'Configured' : 
-                               integrationHealth?.woocommerce?.status === 'not_configured' ? 'Not Configured' : 'Disconnected'}
+                              {merchant?.wooCommerceEnabled ? 'Connected' : 'Not Configured'}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center">
-                          {integrationHealth?.woocommerce?.connected ? (
+                          {merchant?.wooCommerceEnabled ? (
                             <CheckCircle className="w-5 h-5 text-purple-600" />
                           ) : (
                             <AlertCircle className="w-5 h-5 text-orange-500" />
@@ -686,10 +687,25 @@ export default function MerchantDashboard() {
                           <p className="text-xs text-gray-500">
                             Use this API key in your WooCommerce plugin configuration to connect your store.
                           </p>
+                          {merchant?.wooCommerceEnabled && merchant?.wooCommerceSiteURL && (
+                            <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded">
+                              <p className="text-xs font-medium text-green-800 mb-1">✓ WooCommerce Connected</p>
+                              <p className="text-xs text-green-700">
+                                Site URL: <a 
+                                  href={merchant.wooCommerceSiteURL} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="underline hover:text-green-800"
+                                >
+                                  {merchant.wooCommerceSiteURL}
+                                </a>
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                       
-                      {!integrationHealth?.woocommerce?.connected && (
+                      {!merchant?.wooCommerceEnabled && (
                         <div className="mt-2 text-xs text-gray-500">
                           <p>To connect your WooCommerce store, please follow the example repository</p>
                           <a 
