@@ -34,13 +34,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!merchant) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Invalid API key' 
-        },
-        { status: 401 }
-      );
+      return NextResponse.json(false, { status: 200 });
     }
 
     // Update merchant to enable WooCommerce and optionally update store details
@@ -118,13 +112,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!merchant) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Invalid API key' 
-        },
-        { status: 401 }
-      );
+      return NextResponse.json(false, { status: 200 });
     }
 
     // Update merchant to enable WooCommerce if not already enabled
