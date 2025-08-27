@@ -19,14 +19,22 @@ export async function POST(request: NextRequest) {
     // Extract shop domain from headers (Shopify sends this in X-Shopify-Shop-Domain header)
     const shopDomain = request.headers.get('x-shopify-shop-domain') || process.env.SHOPIFY_SHOP_DOMAIN;
 
-    // Get the single merchant from database (there should only be one)
-    const merchant = await prisma.merchant.findFirst();
+    // Parse API key from URL parameters
+    const { searchParams } = new URL(request.url);
+    const apiKey = searchParams.get('apiKey');
+    
+    if (!apiKey) {
+      return NextResponse.json({ error: 'Missing API key parameter' }, { status: 400 });
+    }
+    
+    // Find merchant by API key
+    const merchant = await prisma.merchant.findUnique({
+      where: { apiKey }
+    });
     
     if (!merchant) {
-      console.error('No merchant found in database');
-      return NextResponse.json({ 
-        error: 'No merchant configured' 
-      }, { status: 500 });
+      console.error('Merchant not found for API key:', apiKey);
+      return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
     }
 
     // Extract vendor from first line item (they should all be the same vendor)
