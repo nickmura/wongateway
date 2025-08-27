@@ -32,7 +32,7 @@ A payment gateway KRW stablecoin payments on Shopify, WooCommerce and direct inv
 
 Refer to to the [WooCommerce plugin repository](https://kaia-commerce.vercel.app) for instructions
 
-QUICK START
+## Quick Start
 
 1. **Clone & Install**
    ```bash
