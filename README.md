@@ -1,6 +1,6 @@
 # WonWay 
 
-A payment gateway KRW stablecoin payments on Shopify, WooCommerce and direct invoices.
+A payment gateway KRW stablecoin payments on Shopify, WooCommerce and direct invoices
 
 ## Features
 
@@ -22,7 +22,7 @@ A payment gateway KRW stablecoin payments on Shopify, WooCommerce and direct inv
 - Paste the link for the webhook URL in the shopify dashboard in the URL input, with the JSON format (2025-10 Release candidate API version, if relevant)
 - Click save.
 - Now, in order for the customer to get the invoice link in their email, we need to modify the email confimration. Head over to Notifications > Customer notifications > Order creation
-- Edit the code for it and copy and paste in the email-order-creation-krw-notification.liquid file into the Edit Code (replace) which will send the payment link to the customer.
+- Edit the code for it and copy and paste in the [order-creation-email-notification-krw.liquid](https://github.com/wongateway/wongateway/blob/main/src/lib/order-creation-email-notification-krw.liquid) file into the Edit Code (replace) which will send the payment link to the customer.
 - Click save
 - Test an order and sent it to yourself and it should be working 
 - Alternatively you can run locally or own your own hosting of this repo, just change the domain from wonway.xyz to your own
