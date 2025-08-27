@@ -140,16 +140,13 @@ export default function Home() {
       <header className="container mx-auto px-6 py-6">
         <nav className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xl">W</span>
             </div>
             <span className="text-xl font-bold text-gray-900">WonWay</span>
             <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-semibold">BETA</span>
           </div>
           <div className="flex items-center space-x-6">
-            <Link href="/pay" className="text-gray-600 hover:text-gray-900 transition-colors">
-              {t.nav.demo}
-            </Link>
             <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors">
               {t.nav.dashboard}
             </Link>

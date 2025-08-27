@@ -12,6 +12,7 @@
     "@prisma/client": "^6.14.0",
     "@rainbow-me/rainbowkit": "^2.2.8",
     "@tanstack/react-query": "^5.85.3",
+    "@vercel/analytics": "^1.5.0",
     "lucide-react": "^0.540.0",
     "next": "15.4.7",
     "prisma": "^6.14.0",

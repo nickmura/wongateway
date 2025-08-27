@@ -388,6 +388,10 @@ export default function MerchantDashboard() {
               </Link>
               <span className="text-gray-500">/</span>
               <span className="text-gray-700">Merchant Dashboard</span>
+              <span className="text-gray-500">/</span>
+              <Link href="/faucet" className="text-blue-600 hover:text-blue-700 transition-colors">
+                Faucet
+              </Link>
             </div>
             <ConnectButton />
           </div>
@@ -517,6 +521,15 @@ export default function MerchantDashboard() {
                     Documentation
                   </h3>
                   <nav className="space-y-2">
+                    <a
+                      href="/faucet"
+                      className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 3v12a2 2 0 002 2h8a2 2 0 002-2V7M9 7h6" />
+                      </svg>
+                      <span>KRW Faucet</span>
+                    </a>
                     <a
                       href="https://woocommerce.wonway.xyz"
                       target="_blank"
@@ -725,7 +738,7 @@ export default function MerchantDashboard() {
                                 📥 Download WooCommerce Plugin →
                               </a>
                               <a 
-                                href="https://wonway-demo.com" 
+                                href="https://woocommerce.wonway.xyz" 
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 className="block text-purple-600 hover:text-purple-700 underline"

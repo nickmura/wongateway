@@ -68,37 +68,8 @@ async function fetchPaymentData(params: Awaited<PaymentPageProps['searchParams']
     }
   }
 
-  // If orderId was provided but no order found, return null to show error
-  if (params.orderId) {
-    return null;
-  }
-
-  // Otherwise, return demo data for direct URL access with parameters
-  const defaultData = {
-    amount: 99.00,
-    currency: 'KRW',
-    merchant: 'The Hundreds',
-    product: 'Premium Jacket',
-    description: 'High-quality premium jacket'
-  };
-
-  const orderData = {
-    amount: params.amount ? parseFloat(params.amount) : defaultData.amount,
-    currency: params.currency || defaultData.currency,
-    merchant: params.merchant || defaultData.merchant,
-    product: params.product || defaultData.product,
-    description: params.description || defaultData.description,
-  };
-
-  // Return demo data without creating database entry
-  return {
-    amount: orderData.amount,
-    currency: orderData.currency,
-    merchant: orderData.merchant,
-    product: orderData.product,
-    orderId: null, // No order ID for demo data
-    description: orderData.description,
-  };
+  // If no orderId is provided or orderId was provided but no order found, return null to show error
+  return null;
 }
 
 // Error component for invalid invoices
