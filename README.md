@@ -1,10 +1,11 @@
-# Kaia Commerce
+# WonWay 
 
 A Web3 payment gateway for Kaia blockchain enabling KRW stablecoin payments on Shopify & WooCommerce and direct invoices.
 
 ## Features
 
 - **Shopify Integration**: Real-time payment processing via webhooks
+- **WooCommerce integration**: Real-time payment gateway redirect flow via webhooks
 - **Direct Invoices**: Merchant dashboard for custom payment links  
 - **Multi-token Support**: KAIA native token and KRW stablecoin
 - **Wallet Authentication**: No passwords, Web3 wallet-based auth
@@ -16,7 +17,7 @@ A Web3 payment gateway for Kaia blockchain enabling KRW stablecoin payments on S
 
 1. **Clone & Install**
    ```bash
-   git clone https://github.com/nickmura/kaia-commerce.git
+   git clone https://github.com/nickmura/wonway.git
    cd kaia-commerce && npm install
    ```
 

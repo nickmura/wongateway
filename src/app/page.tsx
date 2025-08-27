@@ -186,14 +186,16 @@ export default function Home() {
             {t.hero.description}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <Link 
-              href={`/pay?amount=99&merchant=Demo+Store&product=Sample+Product&currency=KRW&lang=${language}`}
-              className="inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+            <a 
+              href="https://woocommerce.wonway.xyz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-2 bg-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-purple-700 transition-colors"
             >
-              <ShoppingCart className="w-5 h-5" />
-              <span>{t.hero.tryDemo}</span>
+              <Store className="w-5 h-5" />
+              <span>Try WooCommerce Store</span>
               <ArrowRight className="w-4 h-4" />
-            </Link>
+            </a>
             <a 
               href="https://kaia-commerce.myshopify.com"
               target="_blank"
