@@ -137,28 +137,28 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Header */}
-      <header className="container mx-auto px-6 py-6">
+      <header className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
         <nav className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">W</span>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-lg sm:text-xl">W</span>
             </div>
-            <span className="text-xl font-bold text-gray-900">WonWay</span>
+            <span className="text-lg sm:text-xl font-bold text-gray-900">WonWay</span>
             <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-semibold">BETA</span>
           </div>
-          <div className="flex items-center space-x-6">
-            <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors">
+          <div className="flex items-center space-x-3 sm:space-x-6">
+            <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors text-sm sm:text-base">
               {t.nav.dashboard}
             </Link>
-            <Link href="/faucet" className="text-gray-600 hover:text-gray-900 transition-colors">
+            <Link href="/faucet" className="hidden sm:inline text-gray-600 hover:text-gray-900 transition-colors">
               {t.nav.faucet}
             </Link>
-            <a href="https://github.com/nickmura/wonway" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900 transition-colors">
+            <a href="https://github.com/nickmura/wonway" target="_blank" rel="noopener noreferrer" className="hidden sm:inline text-gray-600 hover:text-gray-900 transition-colors">
               {t.nav.github}
             </a>
             <button
               onClick={() => setLanguage(language === 'en' ? 'ko' : 'en')}
-              className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors border border-gray-300 rounded-lg px-3 py-1.5"
+              className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5"
             >
               <Languages className="w-4 h-4" />
               <span className="text-sm font-medium">{language === 'en' ? 'KO' : 'EN'}</span>
@@ -187,7 +187,7 @@ export default function Home() {
               href="https://woocommerce.wonway.xyz"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center space-x-2 bg-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-purple-700 transition-colors"
+              className="inline-flex items-center space-x-2 border-2 border-purple-600 text-purple-600 px-6 py-3 rounded-xl font-semibold hover:bg-purple-50 transition-colors"
             >
               <Store className="w-5 h-5" />
               <span>Try WooCommerce Store</span>
@@ -197,7 +197,7 @@ export default function Home() {
               href="https://kaia-commerce.myshopify.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center space-x-2 bg-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors"
+              className="inline-flex items-center space-x-2 border-2 border-green-600 text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-50 transition-colors"
             >
               <Store className="w-5 h-5" />
               <span>{t.hero.visitStore}</span>

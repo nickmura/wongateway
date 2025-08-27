@@ -32,7 +32,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <Analytics/>
-        </Providers>
+         </Providers>
       </body>
     </html>
   );
