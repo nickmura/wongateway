@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kaia Commerce",
+  title: "WonWay",
   description: "Web3 Payment Gateway",
 };
 

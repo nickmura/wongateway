@@ -68,7 +68,12 @@ async function fetchPaymentData(params: Awaited<PaymentPageProps['searchParams']
     }
   }
 
-  // Otherwise, return demo data without creating a database entry
+  // If orderId was provided but no order found, return null to show error
+  if (params.orderId) {
+    return null;
+  }
+
+  // Otherwise, return demo data for direct URL access with parameters
   const defaultData = {
     amount: 99.00,
     currency: 'KRW',
@@ -96,10 +101,48 @@ async function fetchPaymentData(params: Awaited<PaymentPageProps['searchParams']
   };
 }
 
+// Error component for invalid invoices
+function InvalidInvoiceError() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Invoice Not Found</h1>
+        <p className="text-gray-600 mb-6">
+          We could not find this invoice or this is an invalid invoice. The invoice may have expired or been cancelled.
+        </p>
+        <div className="space-y-3">
+          <a
+            href="/dashboard"
+            className="block w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            Create Invoice on Dashboard
+          </a>
+          <a
+            href="/"
+            className="block w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+          >
+            Back to Homepage
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default async function PaymentPage({ searchParams }: PaymentPageProps) {
   const resolvedSearchParams = await searchParams;
   const paymentData = await fetchPaymentData(resolvedSearchParams);
   const initialLang = resolvedSearchParams.lang === 'ko' ? 'ko' : 'en';
+
+  // Show error page if invoice not found
+  if (!paymentData) {
+    return <InvalidInvoiceError />;
+  }
 
   return <PaymentClient paymentData={paymentData} initialLang={initialLang} />;
 }
@@ -107,6 +150,13 @@ export default async function PaymentPage({ searchParams }: PaymentPageProps) {
 export async function generateMetadata({ searchParams }: PaymentPageProps) {
   const resolvedSearchParams = await searchParams;
   const paymentData = await fetchPaymentData(resolvedSearchParams);
+  
+  if (!paymentData) {
+    return {
+      title: 'Invoice Not Found - WonWay',
+      description: 'The requested invoice could not be found or is invalid.',
+    };
+  }
   
   return {
     title: `Pay ${paymentData.amount} ${paymentData.currency} - ${paymentData.merchant}`,

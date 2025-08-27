@@ -33,7 +33,7 @@ const connectors = connectorsForWallets(
     },
   ],
   { 
-    appName: 'Kaia Commerce', 
+    appName: 'WonWay', 
     projectId 
   },
 );

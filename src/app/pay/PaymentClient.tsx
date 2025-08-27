@@ -509,7 +509,7 @@ export default function PaymentClient({ paymentData, initialLang = 'en' }: Payme
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <Wallet className="w-5 h-5 text-black" />
-            <span className="font-semibold text-black">Kaia Commerce</span>
+            <span className="font-semibold text-black">WonWay</span>
           </div>
           <ConnectButton />
         </div>

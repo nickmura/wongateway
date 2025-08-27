@@ -384,7 +384,7 @@ export default function MerchantDashboard() {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
               <Link href="/" className="text-xl font-bold text-gray-900">
-                Kaia Commerce
+                WonWay
               </Link>
               <span className="text-gray-500">/</span>
               <span className="text-gray-700">Merchant Dashboard</span>
