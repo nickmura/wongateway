@@ -98,7 +98,8 @@ export async function POST(request: NextRequest) {
         adminGraphqlApiId: extractedData.admin_graphql_api_id,
         shopDomain: extractedData.shop_domain
       }
-    });
+    })
+    
 
     console.log('Order created in database:', order.id);
 

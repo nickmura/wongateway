@@ -8,15 +8,17 @@ datasource db {
 }
 
 model Merchant {
-  id                 String   @id @default(cuid())
-  walletAddress      String   @unique
-  name               String   @default("Unnamed Merchant")
-  email              String?
-  apiKey             String   @unique @db.Char(16)
-  wooCommerceEnabled Boolean  @default(false)
-  wooCommerceSiteURL String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  walletAddress         String   @unique
+  name                  String   @default("Unnamed Merchant")
+  email                 String?
+  apiKey                String   @unique @db.Char(16)
+  wooCommerceEnabled    Boolean  @default(false)
+  wooCommerceSiteURL    String?
+  shopifyAccessToken    String?
+  shopifyShopDomain     String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
   
   @@map("merchants")
 }

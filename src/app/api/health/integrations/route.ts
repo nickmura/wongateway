@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 // Health check for platform integrations
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const healthStatus = {
       shopify: {
@@ -16,19 +17,27 @@ export async function GET() {
       }
     };
 
-    // Check Shopify connection
-    const shopifyAccessToken = process.env.SHOPIFY_API_ACCESS_TOKEN;
-    const shopifyDomain = process.env.SHOPIFY_SHOP_DOMAIN;
+    // Get wallet address from query params to find the merchant
+    const walletAddress = request.nextUrl.searchParams.get('wallet');
+    
+    if (walletAddress) {
+      const merchant = await prisma.merchant.findUnique({
+        where: { walletAddress: walletAddress.toLowerCase() }
+      });
 
-    if (shopifyAccessToken && shopifyDomain) {
-      try {
-        // Test Shopify API connection
-        const shopifyResponse = await fetch(`https://${shopifyDomain}/admin/api/2023-10/shop.json`, {
-          headers: {
-            'X-Shopify-Access-Token': shopifyAccessToken,
-            'Content-Type': 'application/json'
-          }
-        });
+      // Check Shopify connection using merchant-specific credentials
+      const shopifyAccessToken = merchant?.shopifyAccessToken || process.env.SHOPIFY_API_ACCESS_TOKEN;
+      const shopifyDomain = merchant?.shopifyShopDomain || process.env.SHOPIFY_SHOP_DOMAIN;
+
+      if (shopifyAccessToken && shopifyDomain) {
+        try {
+          // Test Shopify API connection
+          const shopifyResponse = await fetch(`https://${shopifyDomain}/admin/api/2023-10/shop.json`, {
+            headers: {
+              'X-Shopify-Access-Token': shopifyAccessToken,
+              'Content-Type': 'application/json'
+            }
+          });
 
         if (shopifyResponse.ok) {
           const shopData = await shopifyResponse.json();
@@ -67,13 +76,42 @@ export async function GET() {
         connected: false,
         status: 'not_configured' as const,
         details: {
-          missingEnvVars: [
-            ...(shopifyAccessToken ? [] : ['SHOPIFY_API_ACCESS_TOKEN']),
-            ...(shopifyDomain ? [] : ['SHOPIFY_SHOP_DOMAIN'])
-          ]
+          message: 'Shopify credentials not configured for this merchant'
         }
       };
     }
+  } else {
+    // No wallet address provided - use legacy env vars if available
+    const shopifyAccessToken = process.env.SHOPIFY_API_ACCESS_TOKEN;
+    const shopifyDomain = process.env.SHOPIFY_SHOP_DOMAIN;
+
+    if (shopifyAccessToken && shopifyDomain) {
+      try {
+        const shopifyResponse = await fetch(`https://${shopifyDomain}/admin/api/2023-10/shop.json`, {
+          headers: {
+            'X-Shopify-Access-Token': shopifyAccessToken,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (shopifyResponse.ok) {
+          const shopData = await shopifyResponse.json();
+          healthStatus.shopify = {
+            connected: true,
+            status: 'connected' as const,
+            details: {
+              domain: shopifyDomain,
+              shopName: shopData.shop?.name || 'Unknown',
+              plan: shopData.shop?.plan_name || 'Unknown',
+              hasWebhooks: true
+            }
+          };
+        }
+      } catch (error) {
+        console.error('Shopify health check error:', error);
+      }
+    }
+  }
 
     // Check WooCommerce connection (placeholder for now)
     const woocommerceUrl = process.env.WOOCOMMERCE_URL;

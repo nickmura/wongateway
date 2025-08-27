@@ -143,8 +143,10 @@ export default function MerchantDashboard() {
   }, [address]);
 
   const fetchIntegrationHealth = async () => {
+    if (!address) return;
+    
     try {
-      const response = await fetch('/api/health/integrations');
+      const response = await fetch(`/api/health/integrations?wallet=${address.toLowerCase()}`);
       if (response.ok) {
         const healthData = await response.json();
         setIntegrationHealth(healthData.integrations);
@@ -231,11 +233,13 @@ export default function MerchantDashboard() {
       console.log('Sending request to create invoice...');
       const res = await fetch('/api/merchants/invoices', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-API-Key': merchant?.apiKey || ''
+        },
         body: JSON.stringify({
           ...formData,
           totalAmount: parseFloat(formData.totalAmount),
-          merchantWallet: address.toLowerCase(),
           type: formData.type,
           expiresInHours: parseInt(formData.expiresInHours)
         })
@@ -585,20 +589,25 @@ export default function MerchantDashboard() {
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-3">
                           <ShoppingBag className={`w-6 h-6 ${
-                            integrationHealth?.shopify?.connected ? 'text-green-600' : 'text-gray-400'
+                            merchant?.shopifyAccessToken && integrationHealth?.shopify?.connected ? 'text-green-600' : 'text-gray-400'
                           }`} />
                           <div>
                             <h3 className="font-semibold text-gray-900">Shopify Integration</h3>
                             <p className={`text-sm ${
-                              integrationHealth?.shopify?.connected ? 'text-green-600' : 'text-gray-500'
+                              merchant?.shopifyAccessToken 
+                                ? (integrationHealth?.shopify?.connected ? 'text-green-600' : 'text-gray-500')
+                                : 'text-gray-500'
                             }`}>
-                              {integrationHealth?.shopify?.connected ? 'Connected' : 
+                              {!merchant?.shopifyAccessToken ? 'Not Configured' :
+                               integrationHealth?.shopify?.connected ? 'Connected' : 
                                integrationHealth?.shopify?.status === 'not_configured' ? 'Not Configured' : 'Disconnected'}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center">
-                          {integrationHealth?.shopify?.connected ? (
+                          {!merchant?.shopifyAccessToken ? (
+                            <AlertCircle className="w-5 h-5 text-orange-500" />
+                          ) : integrationHealth?.shopify?.connected ? (
                             <CheckCircle className="w-5 h-5 text-green-600" />
                           ) : (
                             <AlertCircle className="w-5 h-5 text-orange-500" />
@@ -611,103 +620,188 @@ export default function MerchantDashboard() {
                         </div>
                       ) : null}
                       
-                      {/* API Key Configuration Section */}
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        <h4 className="text-sm font-semibold text-gray-700 mb-2">Webhook Configuration</h4>
-                        <div className="space-y-2">
-                          <div>
-                            <p className="text-xs text-gray-500 mb-1">API Key (for Shopify webhook URL parameter):</p>
-                            <div className="flex items-center space-x-2">
-                              <input
-                                type={showShopifyApiKey ? "text" : "password"}
-                                readOnly
-                                value={merchant?.apiKey || 'Loading...'}
-                                className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded bg-gray-50 font-mono"
-                              />
+                      {/* Show different content based on shopifyAccessToken */}
+                      {merchant?.shopifyAccessToken ? (
+                        <>
+                          {/* API Key Configuration Section */}
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <h4 className="text-sm font-semibold text-gray-700 mb-2">Webhook Configuration</h4>
+                            <div className="space-y-2">
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1">API Key (for Shopify webhook URL parameter):</p>
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type={showShopifyApiKey ? "text" : "password"}
+                                    readOnly
+                                    value={merchant?.apiKey || 'Loading...'}
+                                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded bg-gray-50 font-mono"
+                                  />
+                                  <button
+                                    onClick={() => setShowShopifyApiKey(!showShopifyApiKey)}
+                                    className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                                  >
+                                    {showShopifyApiKey ? 'Hide' : 'Show'}
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (merchant?.apiKey) {
+                                        navigator.clipboard.writeText(merchant.apiKey);
+                                        setCopiedId('shopify-apikey');
+                                        setTimeout(() => setCopiedId(null), 2000);
+                                      }
+                                    }}
+                                    className={`px-2 py-1 text-xs rounded transition-colors ${
+                                      copiedId === 'shopify-apikey'
+                                        ? 'bg-green-200 text-green-800'
+                                        : 'bg-green-100 hover:bg-green-200 text-green-700'
+                                    }`}
+                                    title="Copy API Key"
+                                  >
+                                    {copiedId === 'shopify-apikey' ? 'Copied!' : 'Copy'}
+                                  </button>
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1">Webhook URL:</p>
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="text"
+                                    readOnly
+                                    value={`${window.location.origin}/api/webhooks/shopify?apiKey=${merchant?.apiKey || 'your-api-key'}`}
+                                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded bg-gray-50 font-mono"
+                                  />
+                                  <button
+                                    onClick={() => {
+                                      const webhookUrl = `${window.location.origin}/api/webhooks/shopify?apiKey=${merchant?.apiKey || ''}`;
+                                      navigator.clipboard.writeText(webhookUrl);
+                                      setCopiedId('shopify-webhook');
+                                      setTimeout(() => setCopiedId(null), 2000);
+                                    }}
+                                    className={`px-2 py-1 text-xs rounded transition-colors ${
+                                      copiedId === 'shopify-webhook'
+                                        ? 'bg-green-200 text-green-800'
+                                        : 'bg-green-100 hover:bg-green-200 text-green-700'
+                                    }`}
+                                    title="Copy Webhook URL"
+                                  >
+                                    {copiedId === 'shopify-webhook' ? 'Copied!' : 'Copy'}
+                                  </button>
+                                </div>
+                              </div>
+                              <p className="text-xs text-gray-500 mt-1">
+                                <strong>Note:</strong> This webhook URL works on production deployments only. Local development requires HTTPS tunneling (e.g., ngrok).
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {!integrationHealth?.shopify?.connected && (
+                            <div className="mt-2">
+                              <div className="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                                <p className="font-semibold text-yellow-800 mb-1">⚠️ Important: Self-Hosted Integration Only</p>
+                                <p className="text-yellow-700">
+                                  This Shopify integration requires self-hosting. You cannot connect your store directly through WonWay.
+                                </p>
+                                <p className="text-yellow-700 mt-1">
+                                  To integrate your own Shopify store:
+                                </p>
+                                <ol className="list-decimal list-inside text-yellow-700 ml-2 mt-1">
+                                  <li>Fork this repository</li>
+                                  <li>Deploy your own instance</li>
+                                  <li>Configure with your Shopify credentials</li>
+                                  <li>Use the webhook URL above with your API key parameter</li>
+                                </ol>
+                                <a 
+                                  href="https://github.com/nickmura/wonway" 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="inline-block mt-2 text-yellow-800 hover:text-yellow-900 underline font-medium"
+                                >
+                                  View Repository & Setup Guide →
+                                </a>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {/* Shopify Configuration Form */}
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <h4 className="text-sm font-semibold text-gray-700 mb-2">Configure Shopify Integration</h4>
+                            <div className="space-y-3">
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1">Shopify Access Token:</p>
+                                <input
+                                  type="text"
+                                  id="shopifyAccessToken"
+                                  placeholder="shpat_xxxxxxxxxxxxxxxxxxxxx"
+                                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1">Shopify Shop Domain:</p>
+                                <input
+                                  type="text"
+                                  id="shopifyShopDomain"
+                                  placeholder="your-store.myshopify.com"
+                                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
                               <button
-                                onClick={() => setShowShopifyApiKey(!showShopifyApiKey)}
-                                className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                              >
-                                {showShopifyApiKey ? 'Hide' : 'Show'}
-                              </button>
-                              <button
-                                onClick={() => {
-                                  if (merchant?.apiKey) {
-                                    navigator.clipboard.writeText(merchant.apiKey);
-                                    setCopiedId('shopify-apikey');
-                                    setTimeout(() => setCopiedId(null), 2000);
+                                onClick={async () => {
+                                  const tokenInput = document.getElementById('shopifyAccessToken') as HTMLInputElement;
+                                  const domainInput = document.getElementById('shopifyShopDomain') as HTMLInputElement;
+                                  
+                                  const token = tokenInput?.value.trim();
+                                  const domain = domainInput?.value.trim();
+                                  
+                                  if (!token || !domain) {
+                                    alert('Please enter both Shopify Access Token and Shop Domain');
+                                    return;
+                                  }
+                                  
+                                  try {
+                                    const response = await fetch('/api/merchants/shopify', {
+                                      method: 'POST',
+                                      headers: { 
+                                        'Content-Type': 'application/json',
+                                        'X-API-Key': merchant?.apiKey || ''
+                                      },
+                                      body: JSON.stringify({
+                                        shopifyAccessToken: token,
+                                        shopifyShopDomain: domain
+                                      })
+                                    });
+                                    
+                                    if (response.ok) {
+                                      alert('Shopify configuration saved successfully!');
+                                      // Refresh merchant data and integration health
+                                      fetchMerchantData();
+                                      fetchIntegrationHealth();
+                                    } else {
+                                      const error = await response.json();
+                                      alert(`Failed to save configuration: ${error.error || 'Unknown error'}`);
+                                    }
+                                  } catch (error) {
+                                    console.error('Error saving Shopify config:', error);
+                                    alert('Failed to save configuration. Please try again.');
                                   }
                                 }}
-                                className={`px-2 py-1 text-xs rounded transition-colors ${
-                                  copiedId === 'shopify-apikey'
-                                    ? 'bg-green-200 text-green-800'
-                                    : 'bg-green-100 hover:bg-green-200 text-green-700'
-                                }`}
-                                title="Copy API Key"
+                                className="w-full px-3 py-2 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
                               >
-                                {copiedId === 'shopify-apikey' ? 'Copied!' : 'Copy'}
+                                Save Shopify Configuration
                               </button>
                             </div>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500 mb-1">Webhook URL:</p>
-                            <div className="flex items-center space-x-2">
-                              <input
-                                type="text"
-                                readOnly
-                                value={`${window.location.origin}/api/webhooks/shopify?apiKey=${merchant?.apiKey || 'your-api-key'}`}
-                                className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded bg-gray-50 font-mono"
-                              />
-                              <button
-                                onClick={() => {
-                                  const webhookUrl = `${window.location.origin}/api/webhooks/shopify?apiKey=${merchant?.apiKey || ''}`;
-                                  navigator.clipboard.writeText(webhookUrl);
-                                  setCopiedId('shopify-webhook');
-                                  setTimeout(() => setCopiedId(null), 2000);
-                                }}
-                                className={`px-2 py-1 text-xs rounded transition-colors ${
-                                  copiedId === 'shopify-webhook'
-                                    ? 'bg-green-200 text-green-800'
-                                    : 'bg-green-100 hover:bg-green-200 text-green-700'
-                                }`}
-                                title="Copy Webhook URL"
-                              >
-                                {copiedId === 'shopify-webhook' ? 'Copied!' : 'Copy'}
-                              </button>
+                            
+                            {/* Webhook URL will be shown after saving */}
+                            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-xs">
+                              <p className="text-blue-800 mb-1">📌 After saving:</p>
+                              <p className="text-blue-700">Your webhook URL will be:</p>
+                              <p className="text-blue-600 font-mono mt-1 break-all">
+                                {window.location.origin}/api/webhooks/shopify?apiKey={merchant?.apiKey}
+                              </p>
                             </div>
                           </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            <strong>Note:</strong> This webhook URL works on production deployments only. Local development requires HTTPS tunneling (e.g., ngrok).
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {!integrationHealth?.shopify?.connected && (
-                        <div className="mt-2">
-                          <div className="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                            <p className="font-semibold text-yellow-800 mb-1">⚠️ Important: Self-Hosted Integration Only</p>
-                            <p className="text-yellow-700">
-                              This Shopify integration requires self-hosting. You cannot connect your store directly through WonWay.
-                            </p>
-                            <p className="text-yellow-700 mt-1">
-                              To integrate your own Shopify store:
-                            </p>
-                            <ol className="list-decimal list-inside text-yellow-700 ml-2 mt-1">
-                              <li>Fork this repository</li>
-                              <li>Deploy your own instance</li>
-                              <li>Configure with your Shopify credentials</li>
-                              <li>Use the webhook URL above with your API key parameter</li>
-                            </ol>
-                            <a 
-                              href="https://github.com/nickmura/wonway" 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="inline-block mt-2 text-yellow-800 hover:text-yellow-900 underline font-medium"
-                            >
-                              View Repository & Setup Guide →
-                            </a>
-                          </div>
-                        </div>
+                        </>
                       )}
                     </div>
                   )}

@@ -32,18 +32,29 @@ async function notifyWooCommercePayment(orderKey: string, transactionId: string,
 }
 
 // Function to mark Shopify order as paid
-async function markShopifyOrderAsPaid(adminGraphqlApiId: string, shopDomain?: string) {
-  const shopifyAccessToken = process.env.SHOPIFY_API_ACCESS_TOKEN;
-  const fallbackShopDomain = process.env.SHOPIFY_SHOP_DOMAIN;
+async function markShopifyOrderAsPaid(adminGraphqlApiId: string, shopDomain?: string, merchantWallet?: string) {
+  let shopifyAccessToken = process.env.SHOPIFY_API_ACCESS_TOKEN;
+  let finalShopDomain = shopDomain || process.env.SHOPIFY_SHOP_DOMAIN;
+  
+  // If merchantWallet is provided, try to get merchant-specific credentials
+  if (merchantWallet) {
+    const merchant = await prisma.merchant.findUnique({
+      where: { walletAddress: merchantWallet.toLowerCase() }
+    });
+    
+    if (merchant?.shopifyAccessToken) {
+      shopifyAccessToken = merchant.shopifyAccessToken;
+      finalShopDomain = merchant.shopifyShopDomain || finalShopDomain;
+    }
+  }
   
   if (!shopifyAccessToken) {
-    console.error('SHOPIFY_API_ACCESS_TOKEN not found in environment variables');
+    console.error('No Shopify access token found for this merchant');
     return false;
   }
 
-  const domain = shopDomain || fallbackShopDomain;
-  if (!domain) {
-    console.error('Shop domain not provided and SHOPIFY_SHOP_DOMAIN not found in environment variables');
+  if (!finalShopDomain) {
+    console.error('Shop domain not found for this merchant');
     return false;
   }
 
@@ -91,7 +102,7 @@ async function markShopifyOrderAsPaid(adminGraphqlApiId: string, shopDomain?: st
   };
 
   try {
-    const response = await fetch(`https://${domain}/admin/api/2025-07/graphql.json`, {
+    const response = await fetch(`https://${finalShopDomain}/admin/api/2025-07/graphql.json`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -175,7 +186,11 @@ export async function POST(request: NextRequest) {
     // If this is a Shopify order being marked as paid, notify Shopify
     if (status === 'PAID' && order.type === 'SHOPIFY' && order.adminGraphqlApiId) {
       console.log('Marking Shopify order as paid:', order.adminGraphqlApiId);
-      const shopifySuccess = await markShopifyOrderAsPaid(order.adminGraphqlApiId, order.shopDomain || undefined);
+      const shopifySuccess = await markShopifyOrderAsPaid(
+        order.adminGraphqlApiId, 
+        order.shopDomain || undefined,
+        order.merchantWallet || undefined
+      );
       
       if (!shopifySuccess) {
         console.warn('Failed to mark Shopify order as paid, but continuing with local update');

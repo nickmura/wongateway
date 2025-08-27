@@ -34,6 +34,9 @@ export async function GET(request: NextRequest) {
 // Create new invoice
 export async function POST(request: NextRequest) {
   try {
+    // Check for API key authentication
+    const apiKey = request.headers.get('x-api-key');
+    
     const body = await request.json();
     const {
       productName,
@@ -41,23 +44,43 @@ export async function POST(request: NextRequest) {
       currency = 'KRW',
       customerEmail,
       description,
-      merchantWallet,
+      _merchantWallet,
       expiresInHours = 24  // Default to 24 hours if not specified
     } = body;
 
-    if (!productName || !totalAmount || !merchantWallet) {
+    if (!productName || !totalAmount) {
       return NextResponse.json({ 
-        error: 'Product name, amount, and merchant wallet required' 
+        error: 'Product name and amount are required' 
       }, { status: 400 });
     }
 
-    // Get merchant info
-    const merchant = await prisma.merchant.findUnique({
-      where: { walletAddress: merchantWallet.toLowerCase() }
-    });
+    let merchant;
+    let merchantWallet = _merchantWallet
+    // If API key is provided, authenticate using API key
+    if (apiKey) {
+      merchant = await prisma.merchant.findUnique({
+        where: { apiKey }
+      });
 
-    if (!merchant) {
-      return NextResponse.json({ error: 'Merchant not found. Please refresh the dashboard.' }, { status: 404 });
+      if (!merchant) {
+        return NextResponse.json({ error: 'Invalid API key' }, { status: 401 });
+      }
+
+      // Use the merchant's wallet address from the API key lookup
+      merchantWallet = merchant.walletAddress;
+    } else if (merchantWallet) {
+      // Fallback to wallet address lookup (for dashboard usage)
+      merchant = await prisma.merchant.findUnique({
+        where: { walletAddress: merchantWallet.toLowerCase() }
+      });
+
+      if (!merchant) {
+        return NextResponse.json({ error: 'Merchant not found. Please refresh the dashboard.' }, { status: 404 });
+      }
+    } else {
+      return NextResponse.json({ 
+        error: 'Either API key (via X-API-Key header) or merchantWallet is required' 
+      }, { status: 400 });
     }
 
     // Calculate expiration date for direct invoices
@@ -73,7 +96,7 @@ export async function POST(request: NextRequest) {
         type: 'DIRECT',
         status: 'PENDING',
         merchantName: merchant.name,
-        merchantWallet: merchantWallet.toLowerCase(),
+        merchantWallet: merchant.walletAddress.toLowerCase(),
         productName,
         totalAmount: parseFloat(totalAmount.toString()),
         currency,

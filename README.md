@@ -44,7 +44,7 @@ SHOPIFY_SHOP_DOMAIN="store.myshopify.com" # Optional
 
 **Merchants**: Connect wallet → `/dashboard` → Create invoices → Share payment links
 
-**Customers**: Receive link → Connect wallet → Select token → Complete payment
+**Customers**: Receive link → Connect wallet → Select token → Complete paymentYes
 
 ## Tech Stack
 
