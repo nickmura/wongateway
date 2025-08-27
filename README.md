@@ -1,6 +1,6 @@
 # WonWay 
 
-A Web3 payment gateway for Kaia blockchain enabling KRW stablecoin payments on Shopify & WooCommerce and direct invoices.
+A payment gateway KRW stablecoin payments on Shopify, WooCommerce and direct invoices.
 
 ## Features
 
@@ -10,10 +10,29 @@ A Web3 payment gateway for Kaia blockchain enabling KRW stablecoin payments on S
 - **Multi-token Support**: KAIA native token and KRW stablecoin
 - **Wallet Authentication**: No passwords, Web3 wallet-based auth
 
-## Quick Start
 
-**Shopify/e-commerce integration instructions to be added**
+## Quick Start Integrating your own store (Shopify)
 
+- Add a custom payment gateway on your shopify dashboard Payments > Manual Payments > and name it KRW
+- Go to your Admin Panel and go to "Apps and Sales channels" and then 'Develop apps', click "allow custom apps"
+- Then click "Create an app"
+- Head over to write_order_edits and read_order_edits, & write_orders & read_orders and enable them in the Admin API access scopes in Configuration section of your app
+- Then in API credentials, Install the app, and copy your Admin API access token and paste it in the user dashboard, alongside the URL of your shopify store. This can only be revealed once.
+- Now, in Admin settings in Notifications > Webhooks, create a webhook for Order Creation.
+- Paste the link for the webhook URL in the shopify dashboard in the URL input, with the JSON format (2025-10 Release candidate API version, if relevant)
+- Click save.
+- Now, in order for the customer to get the invoice link in their email, we need to modify the email confimration. Head over to Notifications > Customer notifications > Order creation
+- Edit the code for it and copy and paste in the email-order-creation-krw-notification.liquid file into the Edit Code (replace) which will send the payment link to the customer.
+- Click save
+- Test an order and sent it to yourself and it should be working 
+- Alternatively you can run locally or own your own hosting of this repo, just change the domain from wonway.xyz to your own
+
+
+## Quick Start Integrating your own store (WooCommerce)
+
+Refer to to the [WooCommerce plugin repository](https://kaia-commerce.vercel.app) for instructions
+
+QUICK START
 
 1. **Clone & Install**
    ```bash
@@ -36,8 +55,8 @@ A Web3 payment gateway for Kaia blockchain enabling KRW stablecoin payments on S
 
 ```env
 DATABASE_URL="postgresql://user:pass@localhost:5432/kaia-commerce"
-SHOPIFY_API_ACCESS_TOKEN="shpat_xxx" # Optional
-SHOPIFY_SHOP_DOMAIN="store.myshopify.com" # Optional
+SHOPIFY_API_ACCESS_TOKEN="shpat_xxx" # Optional if running payment gateway locally
+SHOPIFY_SHOP_DOMAIN="store.myshopify.com" # Optional if running payment gateway locally
 ```
 
 ## Usage
