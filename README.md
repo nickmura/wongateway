@@ -13,6 +13,9 @@ A payment gateway KRW stablecoin payments on Shopify, WooCommerce and direct inv
 
 ## Quick Start Integrating your own store (Shopify)
 
+**Disclaimer**: This is for testing purposes only. The KRW stablecoin operates on the Kairos Testnet, and our faucet is available [here](https://wonway.xyz/faucet). Shopify integration requires Admin API access through custom Shopify Apps.
+
+
 - Add a custom payment gateway on your shopify dashboard Payments > Manual Payments > and name it KRW
 - Go to your Admin Panel and go to "Apps and Sales channels" and then 'Develop apps', click "allow custom apps"
 - Then click "Create an app"
@@ -24,7 +27,7 @@ A payment gateway KRW stablecoin payments on Shopify, WooCommerce and direct inv
 - Now, in order for the customer to get the invoice link in their email, we need to modify the email confimration. Head over to Notifications > Customer notifications > Order creation
 - Edit the code for it and copy and paste in the [order-creation-email-notification-krw.liquid](https://github.com/wongateway/wongateway/blob/main/src/lib/order-creation-email-notification-krw.liquid) file into the Edit Code (replace) which will send the payment link to the customer.
 - Click save
-- Test an order and sent it to yourself and it should be working 
+- Test an order via [](https://github.com/)and sent it to yourself and it should be working 
 - Alternatively you can run locally or own your own hosting of this repo, just change the domain from wonway.xyz to your own
 
 
