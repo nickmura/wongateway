@@ -6,8 +6,8 @@ A payment gateway KRW stablecoin payments on Shopify, WooCommerce and direct inv
 
 - **Shopify Integration**: Real-time payment processing via webhooks
 - **WooCommerce integration**: Real-time payment gateway redirect flow via webhooks
-- **Direct Invoices**: Merchant dashboard for custom payment links  
-- **Multi-token Support**: KAIA native token and KRW stablecoin
+- **Direct Invoices**: Direct invoicing for B2B payments, with API
+- **Merchant Dashboard**: Merchant dashboard via wallet signup, access to all invoices, and order status changes on Shopify/WooCommerce dashboards
 - **Wallet Authentication**: No passwords, Web3 wallet-based auth
 
 
@@ -32,6 +32,8 @@ A payment gateway KRW stablecoin payments on Shopify, WooCommerce and direct inv
 
 
 ## Quick Start Integrating your own store (WooCommerce)
+
+**Disclaimer**: This is for testing purposes only. The KRW stablecoin operates on the Kairos Testnet, and our faucet is available [here](https://wonway.xyz/faucet). Shopify integration requires Admin API access through custom Shopify Apps.
 
 Refer to to the [WooCommerce plugin repository](https://kaia-commerce.vercel.app) for instructions
 
