@@ -102,3 +102,8 @@ npx prisma studio # Database GUI
 
 
 **Built for the Kaia ecosystem**
+
+
+## License
+
+GPLv2 or later
